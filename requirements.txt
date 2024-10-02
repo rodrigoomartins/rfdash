@@ -139,7 +139,6 @@ PyDrive2==1.19.0
 Pygments==2.18.0
 pyinstaller==6.10.0
 pyinstaller-hooks-contrib==2024.8
-pyllrp @ file:///C:/Users/rodri/OneDrive/Documentos/rfpy/pyllrp-master/pyllrp-master
 pyOpenSSL==24.1.0
 pyparsing==3.1.2
 pypng==0.20220715.0
