@@ -3,5 +3,5 @@ streamlit  # Para criar a interface web
 matplotlib  # Para geração de gráficos
 seaborn  # Para visualização e melhoria dos gráficos (se utilizado)
 openpyxl  # Para trabalhar com arquivos Excel (.xlsx)
-st-aggrid
+streamlit-aggrid
 numpy
