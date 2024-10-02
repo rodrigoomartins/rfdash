@@ -5,3 +5,4 @@ seaborn  # Para visualização e melhoria dos gráficos (se utilizado)
 openpyxl  # Para trabalhar com arquivos Excel (.xlsx)
 streamlit-aggrid
 numpy
+unicode
