@@ -1,8 +1,9 @@
-pandas  # Para manipulação de DataFrames
-streamlit  # Para criar a interface web
-matplotlib  # Para geração de gráficos
-seaborn  # Para visualização e melhoria dos gráficos (se utilizado)
-openpyxl  # Para trabalhar com arquivos Excel (.xlsx)
+pandas
+streamlit
+matplotlib
+seaborn
+openpyxl
 streamlit-aggrid
-numpy
-unicode
+unidecode  # Adicionado para resolver o erro
+pdfkit
+plotly
