@@ -5,7 +5,12 @@ import io
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 from datetime import datetime
 import unidecode
-import pdfkit
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.lib.enums import TA_CENTER
 import plotly.express as px
 import tempfile
 import json
@@ -28,17 +33,34 @@ contagem_rfid_exemplo_path = "Inventário-Ordem_271.csv"
 # Adiciona a imagem sem a opção de expandir
 st.logo(image=logo_claro_path,icon_image=logo_icon_claro_path,link=site_url)
 with st.sidebar:
-        st.header("Esta é uma ferramenta para análise de divergência de inventários feitos utilizando a tecnologia de RFID da Votu.")
+        st.header("""Esta é uma ferramenta para análise de divergência de inventários feitos utilizando a tecnologia de RFID da Votu.""")
         st.divider()
-        st.write(f"São necessários dois arquivos para gerar a análise:\n- CSV do estoque esperado;\n- CSV da contagem do inventário com RFID.\n\nO arquivo CSV do estoque esperado, deve conter as seguintes informações:\n- EAN\n- PRODUTO\n- REFERENCIA\n- DESCRICAO\n- COR\n- TAMANHO\n- ESTOQUE\n- LOCALIZADOR\n\nO arquivo CSV da contagem com RFID é gerado pelo RFLOG e contém EAN e Quantidade dos produtos lidos.\n\nSeguem dois arquivos de exemplo:\n\n")
-        st.download_button(label="CSV estoque esperado",data=estoque_esperado_exemplo_path,file_name="POSICAO_ESTOQUE.csv",mime="text/csv")
-        st.download_button(label="CSV inventário RFID",data=contagem_rfid_exemplo_path,file_name="CONTAGEM_RFID.csv",mime="text/csv")
-        st.write("É possível carregar mais de um arquivo CSV de inventário e escolher qual será comparado com o estoque esperado.\nA tabela de divergência permite vários tipos de filtragens, ordenações e outras configurações disponíveis.\nAo fim, é possível gerar um arquivo PDF da tabela de divergência.")
+        st.write("""              
+São necessários dois arquivos para gerar a análise:
+- CSV do estoque esperado;
+- CSV da contagem do inventário com RFID.
+
+O arquivo CSV do estoque esperado, deve conter as seguintes informações:
+- EAN
+- PRODUTO
+- REFERENCIA
+- DESCRICAO
+- COR
+- TAMANHO
+- ESTOQUE
+- LOCALIZADOR
+                 
+O arquivo CSV da contagem com RFID é gerado pelo RFLOG e contém EAN e Quantidade dos produtos lidos.
+
+Os arquivos CSV devem conter cabeçalhos, ter `,` (vírgula) como separador padrão e estarem na codificação `UTF-8` (padrão para Google Planilhas; disponível no menu `tipo` na janela de salvamento do Excel; disponível no menu `Codificação`na janela de salvamento do Bloco de Notas.)
+""")
+        st.write("É possível carregar mais de um arquivo CSV de inventário e escolher qual será comparado com o estoque esperado.\nA tabela de divergência permite vários tipos de filtragens, ordenações e outras configurações disponíveis.\nAo fim, é possível gerar um arquivo PDF da tabela de divergência.\n\nCaso não seja possível gerar o arquivo PDF, é possível exportar a tabela clicando com botão direito dentro de qualquer célula e seguindo o menu `export`.")
         
         
-# Função para detectar o delimitador do CSV
+# Ajustar a função de leitura de arquivo para lidar com a detecção do delimitador
 def detect_delimiter(file):
     try:
+        file.seek(0)
         sample = file.read(1024).decode('utf-8')
         file.seek(0)  # Resetar o ponteiro do arquivo para o início
         sniffer = csv.Sniffer()
@@ -71,13 +93,28 @@ def save_metrics(metrics, filename="metrics.json"):
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
-# Função para carregar os dados do CSV
+
+# Função para detectar codificação e ler o arquivo corretamente
 def load_data(file):
     delimiter = detect_delimiter(file)
+    
+    # Detectar a codificação do arquivo (UTF-8 ou ANSI)
     try:
+        # Tentativa de leitura com UTF-8
         file.seek(0)
+        content = file.read().decode('utf-8')
+    except UnicodeDecodeError:
+        # Se falhar, tentar ler como ANSI
+        file.seek(0)
+        content = file.read().decode('latin-1')
+    
+    # Converter o conteúdo para um objeto StringIO para leitura pelo Pandas
+    file.seek(0)
+    file_buffer = io.StringIO(content)
+
+    try:
         # Lendo o CSV com o quotechar configurado para lidar com vírgulas internas
-        data = pd.read_csv(file, sep=delimiter, quotechar='"', engine='python', on_bad_lines='skip')
+        data = pd.read_csv(file_buffer, sep=delimiter, quotechar='"', engine='python', on_bad_lines='skip')
     except pd.errors.ParserError as e:
         st.error(f"Erro ao ler o arquivo CSV: {e}")
         return pd.DataFrame()  # Retorna um DataFrame vazio em caso de erro
@@ -142,15 +179,38 @@ def convert_df_to_csv(df):
 
     return df.to_csv(index=False, encoding='utf-8-sig').encode('utf-8-sig')
 
-
 # Função para gerar um timestamp
 def generate_timestamp():
     return datetime.now().strftime("%Y%m%d_%H%M")
 
-# Função para gerar o PDF da tabela filtrada
-def generate_pdf(filtered_df, font_family, font_size, orientation):
-    # Estilos CSS para formatação do PDF (com opções do usuário e orientação paisagem forçada)
-    # Calcular o resumo dinâmico do inventário
+def generate_pdf(filtered_df, font_size, orientation):
+    # Cria um arquivo temporário para o PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+        pdf_output_path = tmp_pdf.name
+
+    pdf = SimpleDocTemplate(pdf_output_path, pagesize=A4 if orientation == "P" else A4[::-1])
+
+    # Lista de elementos a serem adicionados no PDF
+    elements = []
+
+    # Estilo de texto
+    styles = getSampleStyleSheet()
+    styles["Title"].alignment = TA_CENTER
+    style_normal = styles["Normal"]
+
+    # Adicionando estilo para evitar quebras no meio de palavras
+    style_no_word_break = ParagraphStyle(
+        name="NormalNoWordBreak",
+        parent=styles["Normal"],
+        wordWrap='CJK',  # Estilo que evita quebra de palavras no meio
+        fontSize=font_size
+    )
+
+    # Cabeçalho
+    elements.append(Paragraph("Relatório de Divergência de Inventário", styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Resumo dinâmico
     if not filtered_df.empty:
         total_estoque = filtered_df['ESTOQUE'].sum()
         total_contagem = filtered_df['CONTAGEM'].sum()
@@ -158,126 +218,100 @@ def generate_pdf(filtered_df, font_family, font_size, orientation):
         total_divergencia_negativa = filtered_df[filtered_df['DIVERGÊNCIA'] < 0]['DIVERGÊNCIA'].sum()
         total_divergencia_absoluta = filtered_df['DIVERGÊNCIA'].abs().sum()
     else:
-        total_estoque = 0
-        total_contagem = 0
-        total_divergencia_positiva = 0
-        total_divergencia_negativa = 0
-        total_divergencia_absoluta = 0
-    
-    css = f"""
-    <style>
-    table {{
-        width: 29.7cm; /* Largura A4 paisagem */
-        border-collapse: collapse;
-        font-family: {font_family};
-        font-size: {font_size}px;
-        page-break-inside: avoid;
-        letter-spacing: 1px;
-    }}
-    th, td {{
-        border: 1px solid black;
-        padding: 8px;
-        white-space: nowrap; /* Evita quebra de linha nas células */
-    }}
-    tr:nth-child(even) {{
-        background-color: #f2f2f2; /* Cor de fundo para linhas pares */
-    }}
-    @page {{
-        size: A4 landscape;
-        margin: 1cm;
-    }}
-    @page {{ 
-        @bottom-center {{
-            content: element(footer); }}
-        }}
-    thead {{
-        display: table-header-group; /* Repetir cabeçalho em cada página */
-    }}
-    </style>
-    """
+        total_estoque = total_contagem = total_divergencia_positiva = total_divergencia_negativa = total_divergencia_absoluta = 0
 
-    # Converter a coluna "PRODUTO" para inteiro, se existir, e remover valores não numéricos
-    if 'PRODUTO' in filtered_df.columns:
-        filtered_df['PRODUTO'] = pd.to_numeric(filtered_df['PRODUTO'], errors='coerce').fillna(0).astype(int)
+    # Adicionando o resumo ao PDF
+    resumo = [
+        f"Total Esperado em Estoque: {total_estoque}",
+        f"Total da Contagem: {total_contagem}",
+        f"Divergência Positiva (Sobrando): {total_divergencia_positiva}",
+        f"Divergência Negativa (Faltando): {total_divergencia_negativa}",
+        f"Divergência Absoluta: {total_divergencia_absoluta}"
+    ]
 
-    # Converter a coluna "REFERENCIA" para inteiro, se existir, e remover valores não numéricos
-    if 'REFERENCIA' in filtered_df.columns:
-        filtered_df['REFERENCIA'] = pd.to_numeric(filtered_df['REFERENCIA'], errors='coerce').fillna(0).astype(int)
+    for linha in resumo:
+        elements.append(Paragraph(linha, style_normal))
+        elements.append(Spacer(1, 6))
 
-    # Criar tabela HTML para o resumo
-    summary_html = f"""
-    <table style="margin-top: 20px; width: 50%;">
-        <thead>
-            <tr>
-                <th><b>RESUMO</b></th>
-                <td><b>TOTAIS</b></td>
-            </tr>    
-            <tr>
-                <th>Total Esperado em Estoque</th>
-                <td><b>{total_estoque}</b></td>
-            </tr>
-            <tr>
-                <th>Total da Contagem do Inventário</th>
-                <td><b>{total_contagem}<b></td>
-            </tr>
-            <tr>
-                <th>Total de Divergência Positiva (Sobrando)</th>
-                <td><b>{total_divergencia_positiva}</b></td>
-            </tr>
-            <tr>
-                <th>Total de Divergência Negativa (Faltando)</th>
-                <td><b>{total_divergencia_negativa}</b></td>
-            </tr>
-            <tr>
-                <th>Total de Divergência Absoluta</th>
-                <td><b>{total_divergencia_absoluta}</b></td>
-            </tr>
-        </thead>
-    </table>
-    """
+    elements.append(Spacer(1, 12))
 
-    # Corrigir nomes de colunas do DataFrame para incluir espaços em vez de underscores
-    filtered_df.columns = filtered_df.columns.str.replace('_', ' ')
+    # Cabeçalho da tabela
+    headers = ['PRODUTO', 'EAN', 'REFERENCIA', 'DESCRICAO', 'COR', 'TAMANHO', 'ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA']
+    if 'PEÇAS A SER RELIDAS' in filtered_df.columns:
+        headers.append('PEÇAS A SER RELIDAS')
 
-    # Tabela HTML dos dados filtrados
-    table_html = filtered_df.to_html(index=False, justify='left')
+    # Definindo os dados da tabela
+    data = [headers]
 
-    # HTML completo
-    html_content = f"""
-    <html>
-    <head>
-    {css}
-    </head>
-    <body>
-        {table_html}
-        <footer style="text-align: center; font-size: 12px; padding: 10px;">
-            <p>Visite nosso site: <a href="https://www.voturfid.com.br" target="_blank">www.voturfid.com.br</a></p>
-        </footer>
-    </body>
-    </html>
-    """
+    # Iterando pelas linhas do DataFrame e adicionando ao 'data'
+    for i, row in filtered_df.iterrows():
+        row_data = [
+            Paragraph(str(int(row['PRODUTO']) if not pd.isna(row['PRODUTO']) else '-'), style_normal),
+            Paragraph(str(int(row['EAN'])), style_normal),
+            # Verificar e tratar NaN antes da conversão para inteiro
+            Paragraph(str(int(row['REFERENCIA']) if not pd.isna(row['REFERENCIA']) else '-'), style_normal),
+            Paragraph(str(row['DESCRICAO']) if not pd.isna(row['DESCRICAO']) else '-', style_no_word_break),
+            Paragraph(str(row['COR']) if not pd.isna(row['COR']) else '-', style_no_word_break),
+            Paragraph(str(row['TAMANHO']) if not pd.isna(row['TAMANHO']) else '-', style_no_word_break),
+            Paragraph(str(int(row['ESTOQUE'])), style_normal),
+            Paragraph(str(int(row['CONTAGEM'])), style_normal),
+            Paragraph(str(int(row['DIVERGÊNCIA'])), style_normal)
+        ]
 
-    # Configuração do pdfkit com orientação e numeração de páginas
-    options = {
-        'page-size': 'A4',
-        'orientation': f'{orientation}',
-        'margin-top': '1cm',
-        'margin-right': '1cm',
-        'margin-bottom': '1.5cm',
-        'margin-left': '1cm',
-        'encoding': "UTF-8",
-        'footer-right': '[page] de [topage]',
-    }
+        if 'PEÇAS A SER RELIDAS' in filtered_df.columns:
+            row_data.append(Paragraph(str(int(row['PEÇAS A SER RELIDAS'])), style_normal))
 
-    # Gerar o PDF a partir do HTML
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_html_file:
-        temp_html_file.write(html_content.encode('utf-8'))
-        temp_html_path = temp_html_file.name
+        data.append(row_data)
 
-    pdf_path = temp_html_path.replace(".html", ".pdf")
-    pdfkit.from_file(temp_html_path, pdf_path, options=options)
+    # Definindo larguras fixas e proporcionais para cada coluna
+    col_widths = [
+        30*mm,  # PRODUTO
+        35*mm,  # EAN
+        40*mm,  # REFERENCIA
+        60*mm,  # DESCRICAO (largura maior para suportar descrições longas)
+        25*mm,  # COR
+        20*mm,  # TAMANHO
+        20*mm,  # ESTOQUE
+        20*mm,  # CONTAGEM
+        25*mm   # DIVERGÊNCIA
+    ]
 
-    return pdf_path
+    # Configurando o estilo da tabela
+    table = Table(data, colWidths=col_widths, repeatRows=1)  # 'repeatRows=1' para repetir cabeçalho em cada página
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), font_size),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),        
+    ]))
+    # Loop para aplicar cores alternadas nas linhas
+    num_rows = len(data)
+    for row_index in range(1, num_rows):
+        if row_index % 2 == 0:
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, row_index), (-1, row_index), colors.lightgrey),
+            ]))
+        else:
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, row_index), (-1, row_index), colors.whitesmoke),
+            ]))
+
+    # Adicionando a tabela ao PDF
+    elements.append(table)
+
+    # Quebra de página, se necessário
+    elements.append(PageBreak())
+
+    # Build do PDF
+    pdf.build(elements)
+
+    return pdf_output_path
+
 
 # Função para gerar gráfico de pizza
 def generate_pie_chart(total_contagem, total_divergencia_absoluta, total_estoque):
@@ -301,9 +335,12 @@ def display_data_table(df):
         gridOptions=grid_options,
         data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
         update_mode=GridUpdateMode.MODEL_CHANGED,
+        fit_columns_on_grid_load=True,
+        theme='alpine',
         enable_enterprise_modules=True,
         height=750,
-        reload_data=True
+        width='100%',
+        reload_data=True,
     )
 
     filtered_df = pd.DataFrame(grid_response['data'])
@@ -312,9 +349,9 @@ def display_data_table(df):
 # Título da aplicação
 st.title("Análise de Divergência")
 
-# Upload de arquivos esperados e contados
-expected_file = st.file_uploader("Carregar arquivo CSV com estoque esperado", type=['csv'], key="expected")
-counted_files = st.file_uploader("Carregar arquivos CSV do inventário RFID", type=['csv'], accept_multiple_files=True, key="counted")
+# Modifique a função de upload para aceitar .csv e .txt
+expected_file = st.file_uploader("Carregar arquivo de estoque esperado (.csv ou .txt)", type=['csv', 'txt'], key="expected")
+counted_files = st.file_uploader("Carregar arquivos de inventário RFID (.csv ou .txt)", type=['csv', 'txt'], accept_multiple_files=True, key="counted")
 
 # Função para mostrar o resumo de inventário de forma estilizada
 def show_summary(discrepancies):
@@ -386,13 +423,13 @@ if expected_file is not None and counted_files is not None:
         fig_pie_chart = generate_pie_chart(total_contagem, total_divergencia_absoluta, total_estoque)
         st.plotly_chart(fig_pie_chart)
 
-        with st.expander("Gerar PDF"):
-            font_family = st.selectbox("Família da Fonte", ["Arial", "Courier", "Helvetica", "Times New Roman", "Verdana"], index=0)
-            font_size = st.slider("Tamanho da Fonte", min_value=6, max_value=20, value=10)
-            orientation = st.selectbox("Orientação", ["Landscape", "Portrait"], index=0)  # Paisagem como padrão
-
-            # Botão para gerar PDF
-            if st.button("Gerar PDF"):
-                pdf_path = generate_pdf(filtered_df, font_family, font_size, orientation)
-                with open(pdf_path, "rb") as pdf_file:
-                    st.download_button(label="Baixar PDF", data=pdf_file, file_name=f"resumo_divergencia_{generate_timestamp()}.pdf")
+        # Botão para gerar PDF
+        if st.button("Gerar PDF"):
+            pdf_path = generate_pdf(filtered_df, 8, "L")
+            with open(pdf_path, "rb") as pdf_file:
+                st.download_button(
+                    label="Baixar PDF",
+                    data=pdf_file,
+                    file_name="relatorio_divergencia_inventario.pdf",
+                    mime="application/pdf"
+                )
