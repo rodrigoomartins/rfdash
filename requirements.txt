@@ -5,6 +5,5 @@ seaborn
 openpyxl
 streamlit-aggrid
 unidecode  # Adicionado para resolver o erro
-pdfkit
-wkhtmltopdf
+reportlab
 plotly
