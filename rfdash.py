@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from openpyxl import load_workbook
+from pyxlsb import open_workbook as open_xlsb
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 from datetime import datetime
 import unidecode
@@ -59,6 +61,31 @@ with st.sidebar:
 def normalize_column_names(columns):
     return [unidecode.unidecode(col).strip().upper().replace(' ', '_') for col in columns]
 
+def process_excel_file(file, file_extension):
+    try:
+        # Para arquivos .xlsx
+        if file_extension == 'xlsx':
+            dataframe = pd.read_excel(file, engine='openpyxl')
+        # Para arquivos .xls
+        elif file_extension == 'xls':
+            dataframe = pd.read_excel(file, engine='xlrd')
+        # Para arquivos .xlsb (Binários do Excel)
+        elif file_extension == 'xlsb':
+            with open_xlsb(file) as wb:
+                sheets = wb.sheets
+                df_list = []
+                for sheet in sheets:
+                    with wb.get_sheet(sheet) as ws:
+                        df = pd.DataFrame([row for row in ws.rows()])
+                        df_list.append(df)
+                dataframe = pd.concat(df_list, ignore_index=True)
+        else:
+            raise ValueError(f"Formato de arquivo não suportado: {file_extension}")
+    except Exception as e:
+        raise ValueError(f"Erro ao processar o arquivo: {e}")
+
+    return dataframe
+
 # Função para processar o upload de arquivos
 def process_upload(file, expected_type):
     """
@@ -67,35 +94,55 @@ def process_upload(file, expected_type):
     if file is None:
         return None, None
 
+    # Detectar a extensão do arquivo
+    file_extension = file.name.split('.')[-1].lower()
+
     try:
-        if expected_type == 'estoque_esperado':
-            dataframe = pd.read_csv(file)
+        if file_extension == 'csv':
+            # Ler arquivos CSV diretamente com o pandas
+            file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
+            dataframe = pd.read_csv(file, dtype=str)  # Forçar tudo como string para evitar problemas de tipos
+        elif file_extension in ['xlsx', 'xls', 'xlsb']:
+            # Processar arquivos Excel
+            dataframe = process_excel_file(file, file_extension)
+            st.success("Arquivo Excel carregado com sucesso!")
+        elif file_extension == 'txt':
+            # Ler arquivos TXT como arquivos delimitados (tabulação por padrão)
+            file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
+            dataframe = pd.read_csv(file, delimiter=',', header=None, dtype=str)
+        else:
+            st.error("Formato de arquivo não suportado. Use .csv, .xls, .xlsx, .xlsb ou .txt.")
+            return None, None
+
+        # Normalizar os nomes das colunas para arquivos com cabeçalho
+        if file_extension in ['csv', 'xlsx', 'xls', 'xlsb']:
             dataframe.columns = normalize_column_names(dataframe.columns)
-            # Colunas obrigatórias
+
+        # Verificar as colunas obrigatórias para estoque_esperado
+        if expected_type == 'estoque_esperado':
             required_columns = {'EAN', 'ESTOQUE'}
-            # #Informar o usuário sobre as colunas obrigatórias
-            #st.info("O arquivo de estoque esperado deve conter obrigatoriamente as colunas 'EAN' e 'ESTOQUE'. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
-            # Verificar se o arquivo contém as colunas obrigatórias
             if not required_columns.issubset(set(dataframe.columns)):
-                st.error(f"O arquivo enviado não contém as colunas obrigatórias: {', '.join(required_columns)}.")
+                st.error(f"O arquivo {expected_type} precisa conter as colunas obrigatórias: {', '.join(required_columns)}.")
                 return None, None
+
+        # Tratamento para arquivo de contagem
         elif expected_type == 'contagem':
-            dataframe = pd.read_csv(file, header=None)  # Arquivos de contagem sem cabeçalho
             num_columns = dataframe.shape[1]
-            if num_columns == 2:
+            if num_columns == 2:  # Duas colunas
                 dataframe.columns = ['EAN', 'CONTAGEM']
-            elif num_columns == 1:
+                dataframe['EAN'] = dataframe['EAN'].astype(str)
+                dataframe['CONTAGEM'] = pd.to_numeric(dataframe['CONTAGEM'].str.replace(',', '.'), errors='coerce').fillna(0).astype(int)
+            elif num_columns == 1:  # Uma coluna
                 dataframe.columns = ['EAN']
-                # Contar quantas vezes cada EAN aparece
                 dataframe['CONTAGEM'] = 1
                 dataframe = dataframe.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
-            else:
+            else:  # Qualquer outro número de colunas é inválido
                 st.error("O arquivo de contagem deve ter uma ou duas colunas.")
                 return None, None
-            # Não há necessidade de verificar colunas obrigatórias para 'contagem', pois já tratamos ambos os casos
-        else:
-            st.error(f"Tipo de arquivo desconhecido: {expected_type}")
-            return None, None
+
+    except pd.errors.EmptyDataError:
+        st.error(f"O arquivo {expected_type} está vazio ou possui um formato inválido.")
+        return None, None
     except Exception as e:
         st.error(f"Erro ao ler o arquivo {expected_type}: {e}")
         return None, None
@@ -330,8 +377,10 @@ def show_summary(discrepancies):
     st.divider()
     st.metric('Total Esperado em Estoque', total_estoque)
 
-# Função para calcular divergências
 def calculate_discrepancies(expected, counted, file_name):
+    """
+    Calcula as discrepâncias entre os DataFrames de estoque esperado e contagem.
+    """
     # Verificar se a coluna 'EAN' existe em ambos os DataFrames
     if 'EAN' not in expected.columns or 'EAN' not in counted.columns:
         st.error("A coluna 'EAN' não foi encontrada em um dos arquivos CSV.")
@@ -341,31 +390,34 @@ def calculate_discrepancies(expected, counted, file_name):
     expected['EAN'] = expected['EAN'].astype(str)
     counted['EAN'] = counted['EAN'].astype(str)
 
+    # Agregar o DataFrame de contagem para consolidar as quantidades
+    counted_aggregated = counted.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
+
     # Adiciona a coluna 'ESTOQUE' com valor 0 no expected se não existir
     if 'ESTOQUE' not in expected.columns:
         expected['ESTOQUE'] = 0
 
-    # Adiciona a coluna 'CONTAGEM' com valor 0 no counted se não existir
-    if 'CONTAGEM' not in counted.columns:
-        counted['CONTAGEM'] = 0
-
     # Merge completo dos dados esperados e contados usando EAN como chave
-    discrepancies = pd.merge(expected, counted, on='EAN', how='outer', suffixes=('_EXPECTED', '_COUNTED'))
+    discrepancies = pd.merge(expected, counted_aggregated, on='EAN', how='outer', suffixes=('_EXPECTED', '_COUNTED'))
 
     # Substitui NaN em 'ESTOQUE' e 'CONTAGEM' por 0
     discrepancies['ESTOQUE'].fillna(0, inplace=True)
     discrepancies['CONTAGEM'].fillna(0, inplace=True)
 
+    # Converter as colunas 'ESTOQUE' e 'CONTAGEM' para numérico
+    discrepancies['ESTOQUE'] = pd.to_numeric(discrepancies['ESTOQUE'], errors='coerce').fillna(0).astype(int)
+    discrepancies['CONTAGEM'] = pd.to_numeric(discrepancies['CONTAGEM'], errors='coerce').fillna(0).astype(int)
+
     # Cálculo da divergência
     discrepancies['DIVERGÊNCIA'] = discrepancies['CONTAGEM'] - discrepancies['ESTOQUE']
 
     # Adicionar coluna para reler peças apenas para os SKUs divergentes
-    discrepancies['PEÇAS A SEREM RELIDAS'] = discrepancies.apply(lambda row: max(row['ESTOQUE'], row['CONTAGEM']) if row['DIVERGÊNCIA'] != 0 else 0, axis=1)
-
-    # Arredondar números para inteiros
-    discrepancies = discrepancies.astype({'ESTOQUE': int, 'CONTAGEM': int, 'DIVERGÊNCIA': int})
+    discrepancies['PEÇAS A SEREM RELIDAS'] = discrepancies.apply(
+        lambda row: max(row['ESTOQUE'], row['CONTAGEM']) if row['DIVERGÊNCIA'] != 0 else 0, axis=1
+    )
 
     return discrepancies
+
 
 # Dicionário para armazenar divergências de múltiplos arquivos
 all_discrepancies = {}
@@ -379,8 +431,8 @@ st.header("Upload de Arquivos")
 st.subheader("Arquivo de Estoque Esperado")
 st.info("O arquivo de estoque esperado deve conter obrigatoriamente as colunas 'EAN' e 'ESTOQUE'. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
 uploaded_estoque_esperado = st.file_uploader(
-    "Upload do arquivo de estoque esperado (.csv)",
-    type=['csv'],
+    "Upload do arquivo de estoque esperado (.csv, .xls, .xlsx)",
+    type=['csv', 'xls', 'xlsx'],
     key="estoque_esperado"
 )
 

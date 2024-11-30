@@ -2050,5 +2050,608 @@
         "total_divergencia_absoluta": 5161,
         "timestamp": "20241130_1156",
         "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_10 (1).txt"
+    },
+    {
+        "total_estoque": 4254,
+        "total_contagem": 7622,
+        "total_divergencia_positiva": 4252,
+        "total_divergencia_negativa": -884,
+        "total_divergencia_absoluta": 5136,
+        "timestamp": "20241130_1224",
+        "nome_arquivo_contagem": "saldo_estoque_aguaazul - P\u00e1gina1.csv"
+    },
+    {
+        "total_estoque": 14511,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 1990,
+        "total_divergencia_negativa": -1725,
+        "total_divergencia_absoluta": 3715,
+        "timestamp": "20241130_1248",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 14511,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 1990,
+        "total_divergencia_negativa": -1725,
+        "total_divergencia_absoluta": 3715,
+        "timestamp": "20241130_1249",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 14511,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 1990,
+        "total_divergencia_negativa": -1725,
+        "total_divergencia_absoluta": 3715,
+        "timestamp": "20241130_1249",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1252",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1253",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 41459,
+        "total_divergencia_positiva": 207,
+        "total_divergencia_negativa": -11,
+        "total_divergencia_absoluta": 218,
+        "timestamp": "20241130_1253",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1253",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 13247,
+        "total_divergencia_negativa": -524,
+        "total_divergencia_absoluta": 13771,
+        "timestamp": "20241130_1254",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 13247,
+        "total_divergencia_negativa": -524,
+        "total_divergencia_absoluta": 13771,
+        "timestamp": "20241130_1254",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 13247,
+        "total_divergencia_negativa": -524,
+        "total_divergencia_absoluta": 13771,
+        "timestamp": "20241130_1254",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 13247,
+        "total_divergencia_negativa": -524,
+        "total_divergencia_absoluta": 13771,
+        "timestamp": "20241130_1259",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 14776,
+        "total_divergencia_positiva": 13247,
+        "total_divergencia_negativa": -524,
+        "total_divergencia_absoluta": 13771,
+        "timestamp": "20241130_1302",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1303",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1303",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 41459,
+        "total_divergencia_positiva": 207,
+        "total_divergencia_negativa": -11,
+        "total_divergencia_absoluta": 218,
+        "timestamp": "20241130_1304",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1304",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1309",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1309",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1313",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1313",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1313",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1313",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1314",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1314",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1314",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1316",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1316",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1317",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1317",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1317",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1317",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1317",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1321",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1322",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1322",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1322",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1323",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1324",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1324",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1327",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1327",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 0,
+        "total_divergencia_positiva": 0,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 41263,
+        "timestamp": "20241130_1327",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 0,
+        "total_divergencia_positiva": 0,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 41263,
+        "timestamp": "20241130_1327",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 0,
+        "total_divergencia_positiva": 0,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 41263,
+        "timestamp": "20241130_1327",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1330",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1331",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1331",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1333",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1333",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1334",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1334",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1334",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1344",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1347",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1347",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1347",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1352",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 41459,
+        "total_divergencia_positiva": 207,
+        "total_divergencia_negativa": -11,
+        "total_divergencia_absoluta": 218,
+        "timestamp": "20241130_1353",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 41459,
+        "total_divergencia_positiva": 207,
+        "total_divergencia_negativa": -11,
+        "total_divergencia_absoluta": 218,
+        "timestamp": "20241130_1355",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271.csv"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 2698,
+        "total_divergencia_positiva": 2698,
+        "total_divergencia_negativa": -41263,
+        "total_divergencia_absoluta": 43961,
+        "timestamp": "20241130_1355",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 41263,
+        "total_contagem": 41459,
+        "total_divergencia_positiva": 207,
+        "total_divergencia_negativa": -11,
+        "total_divergencia_absoluta": 218,
+        "timestamp": "20241130_1356",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_271_sem_cabecalho.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1357",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1357",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1357",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1357",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 2053,
+        "total_contagem": 1876,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241130_1357",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
     }
 ]
