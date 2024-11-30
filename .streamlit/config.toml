@@ -1,0 +1,7 @@
+[theme]
+base="dark"
+primaryColor="#1E90FF"          # Azul Dodger
+backgroundColor="#2F2F2F"       # Cinza Escuro
+secondaryBackgroundColor="#1C1C1C"  # Cinza Muito Escuro
+textColor="#FFFFFF"             # Branco
+font="sans serif"
