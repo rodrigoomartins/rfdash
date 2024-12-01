@@ -2743,5 +2743,23 @@
         "total_divergencia_absoluta": 1079,
         "timestamp": "20241201_1726",
         "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 1104,
+        "total_contagem": 927,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241201_1728",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
+    },
+    {
+        "total_estoque": 1104,
+        "total_contagem": 927,
+        "total_divergencia_positiva": 451,
+        "total_divergencia_negativa": -628,
+        "total_divergencia_absoluta": 1079,
+        "timestamp": "20241201_1728",
+        "nome_arquivo_contagem": "Invent\u00e1rio-Ordem_11.txt"
     }
 ]

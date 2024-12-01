@@ -379,6 +379,7 @@ def show_summary(discrepancies):
     total_estoque = discrepancies['ESTOQUE'].sum()
     total_contagem_rfid = discrepancies['CONTAGEM'].sum()  # Soma total da contagem RFID
     st.divider()
+    st.subheader("Resumo Total")
     col1, col2 = st.columns(2)
     with col1:
         st.metric('Total Esperado em Estoque', total_estoque)
