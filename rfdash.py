@@ -373,9 +373,17 @@ def display_data_table(df):
 
 # Função para mostrar o resumo de inventário de forma estilizada
 def show_summary(discrepancies):
+    """
+    Exibe o resumo de estoque e contagem com RFID.
+    """
     total_estoque = discrepancies['ESTOQUE'].sum()
+    total_contagem_rfid = discrepancies['CONTAGEM'].sum()  # Soma total da contagem RFID
     st.divider()
-    st.metric('Total Esperado em Estoque', total_estoque)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric('Total Esperado em Estoque', total_estoque)
+    with col2:
+        st.metric('Total da Contagem com RFID', total_contagem_rfid)
 
 def calculate_discrepancies(expected, counted, file_name):
     """
@@ -489,9 +497,14 @@ if estoque_df is not None and contagem_df is not None:
 
         st.subheader("Resumo Dinâmico")
         st.caption("Valores filtrados")
-        st.metric("Estoque Esperado", total_estoque)
+        col5, col6, col7 = st.columns(3)
+        with col5:
+            st.metric("Estoque Esperado", total_estoque)
+        with col6:
+            st.metric('Total da Contagem', total_contagem)
         accuracy_percentage = ((total_estoque - total_divergencia_absoluta) / total_estoque * 100) if total_estoque != 0 else 0
-        st.metric("Acurácia do Inventário", f"{accuracy_percentage:.2f}%")
+        with col7:
+            st.metric("Acurácia do Inventário", f"{accuracy_percentage:.2f}%")
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
