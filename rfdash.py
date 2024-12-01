@@ -10,6 +10,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+import time
 import plotly.express as px
 import tempfile
 import json
@@ -34,6 +35,30 @@ logo_icon_claro_path = "logo_icon_claro.png"
 logo_escuro_path = "logo_escuro_votu.png"
 site_url = "https://www.voturfid.com.br"
 #st.image (logo_claro_path, width=150)
+
+# Inicializar session_state para mensagens de sucesso, se não estiver presente
+if "success_messages" not in st.session_state:
+    st.session_state.success_messages = {}
+
+def show_temporary_success(message_key, message_text, duration=3):
+    """
+    Exibe uma mensagem de sucesso temporária apenas uma vez, utilizando `st.session_state`.
+    - message_key: Identificador único da mensagem.
+    - message_text: Texto a ser exibido.
+    - duration: Duração da mensagem (em segundos).
+    """
+    # Inicializar a chave no session_state se não estiver presente
+    if message_key not in st.session_state.success_messages:
+        st.session_state.success_messages[message_key] = False  # Inicialmente, mensagem não exibida
+
+    # Exibir a mensagem apenas se ainda não foi exibida
+    if not st.session_state.success_messages[message_key]:
+        with st.container():  # Usar container para garantir atualização
+            placeholder = st.empty()
+            placeholder.success(message_text)  # Exibe a mensagem
+            time.sleep(duration)  # Aguarda a duração definida
+            placeholder.empty()  # Remove a mensagem
+        st.session_state.success_messages[message_key] = True  # Marcar como exibida
 
 # Adiciona a imagem sem a opção de expandir
 st.logo(image=logo_claro_path,icon_image=logo_icon_claro_path,link=site_url)
@@ -105,7 +130,6 @@ def process_upload(file, expected_type):
         elif file_extension in ['xlsx', 'xls', 'xlsb']:
             # Processar arquivos Excel
             dataframe = process_excel_file(file, file_extension)
-            st.success("Arquivo Excel carregado com sucesso!")
         elif file_extension == 'txt':
             # Ler arquivos TXT como arquivos delimitados (tabulação por padrão)
             file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
@@ -460,13 +484,13 @@ contagem_df, contagem_tipo = process_upload(uploaded_contagem, "contagem")
 # Exibir mensagens de sucesso ou erro
 if uploaded_estoque_esperado:
     if estoque_df is not None:
-        st.success("Arquivo de estoque esperado carregado com sucesso!")
+        show_temporary_success("estoque_df","Arquivo de estoque esperado carregado com sucesso!",duration=2)
     else:
         st.error("Falha ao carregar o arquivo de estoque esperado.")
 
 if uploaded_contagem:
     if contagem_df is not None:
-        st.success("Arquivo de contagem carregado com sucesso!")
+        show_temporary_success("contagem_df","Arquivo de contagem carregado com sucesso!",duration=2)
     else:
         st.error("Falha ao carregar o arquivo de contagem.")
 
