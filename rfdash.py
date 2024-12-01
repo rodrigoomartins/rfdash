@@ -456,27 +456,29 @@ def calculate_discrepancies(expected, counted, file_name):
 # Dicionário para armazenar divergências de múltiplos arquivos
 all_discrepancies = {}
 
-# Título da aplicação
-st.title("Análise de Divergência")
+st.title("Análise de Divergências de Estoque")
+# Exibir o texto estilizado dentro do expander
+with st.expander("Upload de Arquivos",expanded=True, icon='📂'):
+    
+    col8, col9 = st.columns(2)
+    with col8:
+        st.subheader("Arquivo de Estoque Esperado")
+        uploaded_estoque_esperado = st.file_uploader(
+            "Upload do arquivo de estoque esperado (.csv, .xls, .xlsx)",
+            type=['csv', 'xls', 'xlsx'],
+            key="estoque_esperado",
+            help="Arquivo `.csv`, `.txt`, `.xls` ou `xlsx` com dados de estoque (recomendado utilizar `.csv` separado por `,`)"
+        )
 
-# Configurar as caixas de upload fixas
-st.header("Upload de Arquivos")
-
-st.subheader("Arquivo de Estoque Esperado")
-st.info("O arquivo de estoque esperado deve conter obrigatoriamente as colunas 'EAN' e 'ESTOQUE'. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
-uploaded_estoque_esperado = st.file_uploader(
-    "Upload do arquivo de estoque esperado (.csv, .xls, .xlsx)",
-    type=['csv', 'xls', 'xlsx'],
-    key="estoque_esperado"
-)
-
-st.subheader("Arquivo de Contagem")
-uploaded_contagem = st.file_uploader(
-    "Upload do arquivo de contagem (.csv ou .txt)",
-    type=['csv', 'txt'],
-    key="contagem"
-)
-
+    with col9:
+        st.subheader("Arquivo de Contagem")
+        uploaded_contagem = st.file_uploader(
+            "Upload do arquivo de contagem (.csv ou .txt)",
+            type=['csv', 'txt'],
+            key="contagem",
+            help="Arquivo `.txt` extraído do RFLog"
+        )
+    st.info("O arquivo de estoque esperado deve conter obrigatoriamente as colunas 'EAN' e 'ESTOQUE'. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
 # Processar os uploads
 estoque_df, estoque_tipo = process_upload(uploaded_estoque_esperado, "estoque_esperado")
 contagem_df, contagem_tipo = process_upload(uploaded_contagem, "contagem")
