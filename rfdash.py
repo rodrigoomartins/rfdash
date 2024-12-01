@@ -351,8 +351,9 @@ def display_data_table(df):
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_pagination(enabled=False)  # Desativar paginação
     gb.configure_side_bar(True)
+    gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_default_column(value=True, enableRowGroup=True, aggFunc='sum', editable=True, groupable=True, filter=True, sortable=True)
-    gb.configure_grid_options(domLayout='normal', enableEnterpriseModules=True)  # Configurar altura automática para rolagem infinita
+    gb.configure_grid_options(domLayout='normal', enableEnterpriseModules=True, enableRangeSelection=True, suppressExcelExport=False, suppressMultiSort=False)  # Configurar altura automática para rolagem infinita
     grid_options = gb.build()
 
     grid_response = AgGrid(
