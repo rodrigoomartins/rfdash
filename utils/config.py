@@ -16,6 +16,21 @@ import tempfile
 import json
 import os
 import numpy as np
+import streamlit.components.v1 as components
+from streamlit.components.v1 import html, declare_component
+import hashlib
+from pyecharts.charts import Pie,Liquid, Bar, Line, Gauge, Page
+from pyecharts import options as opts
+
+def gerar_hash(file):
+    """
+    Gera um hash MD5 do conteúdo do arquivo para uso no cache.
+    """
+    file.seek(0)
+    file_content = file.read()
+    file.seek(0)
+    return hashlib.md5(file_content).hexdigest()
+
 
 def show_temporary_success(message_key, message_text, duration=3):
     """
@@ -66,57 +81,202 @@ def process_excel_file(file, file_extension):
 
     return dataframe
 
+@st.cache_data(show_spinner="Processando arquivo...")
+def processar_arquivo_com_hash(hash_value, content, file_extension, expected_type):
+    from io import BytesIO, StringIO
+
+    if file_extension == 'csv':
+        df = pd.read_csv(StringIO(content.decode('utf-8')), dtype=str)
+    elif file_extension in ['xls', 'xlsx']:
+        df = pd.read_excel(BytesIO(content), engine='openpyxl')
+    elif file_extension == 'txt':
+        df = pd.read_csv(StringIO(content.decode('utf-8')), delimiter=',', header=None, dtype=str)
+    else:
+        return None, None
+
+    # Normalizar e validar
+    df.columns = normalize_column_names(df.columns) if df.shape[1] > 1 else df.columns
+
+    if expected_type == "estoque_esperado":
+        if not {'EAN', 'ESTOQUE'}.issubset(set(df.columns)):
+            return None, None
+    elif expected_type == "contagem":
+        if df.shape[1] == 2:
+            df.columns = ['EAN', 'CONTAGEM']
+            df['EAN'] = df['EAN'].astype(str)
+            df['CONTAGEM'] = pd.to_numeric(df['CONTAGEM'].str.replace(',', '.'), errors='coerce').fillna(0).astype(int)
+        elif df.shape[1] == 1:
+            df.columns = ['EAN']
+            df['CONTAGEM'] = 1
+            df = df.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
+        else:
+            return None, None
+
+    return df, expected_type
+
+# @st.cache_data(show_spinner=True)
+# def process_file_cached(content, extension, expected_type):
+#     """
+#     Função cacheada que processa o conteúdo do arquivo com base no tipo e extensão.
+#     """
+#     from io import BytesIO, StringIO
+
+#     try:
+#         if extension == 'csv':
+#             dataframe = pd.read_csv(StringIO(content.decode('utf-8')), dtype=str)
+#         elif extension in ['xlsx', 'xls', 'xlsb']:
+#             dataframe = process_excel_file(BytesIO(content), extension)
+#         elif extension == 'txt':
+#             dataframe = pd.read_csv(StringIO(content.decode('utf-8')), delimiter=',', header=None, dtype=str)
+#         else:
+#             return None, f"Formato de arquivo não suportado: {extension}"
+
+#         # Normalização para arquivos com cabeçalho
+#         if extension in ['csv', 'xlsx', 'xls', 'xlsb']:
+#             dataframe.columns = normalize_column_names(dataframe.columns)
+
+#         # Validação para estoque_esperado
+#         if expected_type == 'estoque_esperado':
+#             required_columns = {'EAN', 'ESTOQUE'}
+#             if not required_columns.issubset(set(dataframe.columns)):
+#                 return None, f"O arquivo '{expected_type}' precisa conter: {', '.join(required_columns)}."
+
+#         # Tratamento para contagem
+#         elif expected_type == 'contagem':
+#             num_columns = dataframe.shape[1]
+#             if num_columns == 2:
+#                 dataframe.columns = ['EAN', 'CONTAGEM']
+#                 dataframe['EAN'] = dataframe['EAN'].astype(str)
+#                 dataframe['CONTAGEM'] = pd.to_numeric(dataframe['CONTAGEM'].str.replace(',', '.'), errors='coerce').fillna(0).astype(int)
+#             elif num_columns == 1:
+#                 dataframe.columns = ['EAN']
+#                 dataframe['CONTAGEM'] = 1
+#                 dataframe = dataframe.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
+#             else:
+#                 return None, "O arquivo de contagem deve ter uma ou duas colunas."
+
+#         return dataframe, None
+
+#     except pd.errors.EmptyDataError:
+#         return None, f"O arquivo '{expected_type}' está vazio ou inválido."
+#     except Exception as e:
+#         return None, f"Erro ao ler o arquivo '{expected_type}': {e}"
+
 # Função para processar o upload de arquivos
+# def process_upload(file, expected_type):
+#     """
+#     Processa o arquivo carregado e aplica o tratamento específico baseado no tipo esperado.
+#     """
+#     if file is None:
+#         return None, None
+
+#     # Detectar a extensão do arquivo
+#     file_extension = file.name.split('.')[-1].lower()
+
+#     try:
+#         if file_extension == 'csv':
+#             # Ler arquivos CSV diretamente com o pandas
+#             file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
+#             dataframe = pd.read_csv(file, dtype=str)  # Forçar tudo como string para evitar problemas de tipos
+#         elif file_extension in ['xlsx', 'xls', 'xlsb']:
+#             # Processar arquivos Excel
+#             dataframe = process_excel_file(file, file_extension)
+#         elif file_extension == 'txt':
+#             # Ler arquivos TXT como arquivos delimitados (tabulação por padrão)
+#             file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
+#             dataframe = pd.read_csv(file, delimiter=',', header=None, dtype=str)
+#         else:
+#             st.error("Formato de arquivo não suportado. Use .csv, .xls, .xlsx, .xlsb ou .txt.")
+#             return None, None
+
+#         # Normalizar os nomes das colunas para arquivos com cabeçalho
+#         if file_extension in ['csv', 'xlsx', 'xls', 'xlsb']:
+#             dataframe.columns = normalize_column_names(dataframe.columns)
+
+#         # Verificar as colunas obrigatórias para estoque_esperado
+#         if expected_type == 'estoque_esperado':
+#             required_columns = {'EAN', 'ESTOQUE'}
+#             if not required_columns.issubset(set(dataframe.columns)):
+#                 st.error(f"O arquivo {expected_type} precisa conter as colunas obrigatórias: {', '.join(required_columns)}.")
+#                 return None, None
+
+#         # Tratamento para arquivo de contagem
+#         elif expected_type == 'contagem':
+#             num_columns = dataframe.shape[1]
+#             if num_columns == 2:  # Duas colunas
+#                 dataframe.columns = ['EAN', 'CONTAGEM']
+#                 dataframe['EAN'] = dataframe['EAN'].astype(str)
+#                 dataframe['CONTAGEM'] = pd.to_numeric(dataframe['CONTAGEM'].str.replace(',', '.'), errors='coerce').fillna(0).astype(int)
+#             elif num_columns == 1:  # Uma coluna
+#                 dataframe.columns = ['EAN']
+#                 dataframe['CONTAGEM'] = 1
+#                 dataframe = dataframe.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
+#             else:  # Qualquer outro número de colunas é inválido
+#                 st.error("O arquivo de contagem deve ter uma ou duas colunas.")
+#                 return None, None
+
+#     except pd.errors.EmptyDataError:
+#         st.error(f"O arquivo {expected_type} está vazio ou possui um formato inválido.")
+#         return None, None
+#     except Exception as e:
+#         st.error(f"Erro ao ler o arquivo {expected_type}: {e}")
+#         return None, None
+
+#     return dataframe, expected_type
+
 def process_upload(file, expected_type):
     """
     Processa o arquivo carregado e aplica o tratamento específico baseado no tipo esperado.
+    - Para arquivos de contagem: assume SEM cabeçalho. Se tiver 1 coluna = EANs empilhados; 2 colunas = EAN, QUANTIDADE
+    - Para estoque_esperado: assume COM cabeçalho padrão.
     """
     if file is None:
         return None, None
 
-    # Detectar a extensão do arquivo
     file_extension = file.name.split('.')[-1].lower()
 
     try:
-        if file_extension == 'csv':
-            # Ler arquivos CSV diretamente com o pandas
-            file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
-            dataframe = pd.read_csv(file, dtype=str)  # Forçar tudo como string para evitar problemas de tipos
-        elif file_extension in ['xlsx', 'xls', 'xlsb']:
-            # Processar arquivos Excel
-            dataframe = process_excel_file(file, file_extension)
-        elif file_extension == 'txt':
-            # Ler arquivos TXT como arquivos delimitados (tabulação por padrão)
-            file.seek(0)  # Certifique-se de que o ponteiro do arquivo está no início
+        # Arquivo de CONTAGEM (sem cabeçalho!)
+        if expected_type == 'contagem':
+            file.seek(0)
             dataframe = pd.read_csv(file, delimiter=',', header=None, dtype=str)
-        else:
-            st.error("Formato de arquivo não suportado. Use .csv, .xls, .xlsx, .xlsb ou .txt.")
-            return None, None
 
-        # Normalizar os nomes das colunas para arquivos com cabeçalho
-        if file_extension in ['csv', 'xlsx', 'xls', 'xlsb']:
+            num_columns = dataframe.shape[1]
+
+            if num_columns == 2:
+                dataframe.columns = ['EAN', 'CONTAGEM']
+                dataframe['EAN'] = dataframe['EAN'].astype(str).str.strip()
+                dataframe['CONTAGEM'] = pd.to_numeric(
+                    dataframe['CONTAGEM'].str.replace(',', '.'), errors='coerce'
+                ).fillna(0).astype(int)
+
+            elif num_columns == 1:
+                dataframe.columns = ['EAN']
+                dataframe['EAN'] = dataframe['EAN'].astype(str).str.strip()
+                dataframe['CONTAGEM'] = 1
+                dataframe = dataframe.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
+
+            else:
+                st.error("O arquivo de contagem deve conter uma ou duas colunas.")
+                return None, None
+
+        # Arquivo de ESTOQUE ESPERADO (com cabeçalho!)
+        elif expected_type == 'estoque_esperado':
+            if file_extension == 'csv':
+                file.seek(0)
+                dataframe = pd.read_csv(file, dtype=str)
+            elif file_extension in ['xlsx', 'xls', 'xlsb']:
+                dataframe = process_excel_file(file, file_extension)
+            else:
+                st.error("Formato de arquivo não suportado para estoque esperado.")
+                return None, None
+
+            # Normaliza nomes das colunas
             dataframe.columns = normalize_column_names(dataframe.columns)
 
-        # Verificar as colunas obrigatórias para estoque_esperado
-        if expected_type == 'estoque_esperado':
             required_columns = {'EAN', 'ESTOQUE'}
             if not required_columns.issubset(set(dataframe.columns)):
                 st.error(f"O arquivo {expected_type} precisa conter as colunas obrigatórias: {', '.join(required_columns)}.")
-                return None, None
-
-        # Tratamento para arquivo de contagem
-        elif expected_type == 'contagem':
-            num_columns = dataframe.shape[1]
-            if num_columns == 2:  # Duas colunas
-                dataframe.columns = ['EAN', 'CONTAGEM']
-                dataframe['EAN'] = dataframe['EAN'].astype(str)
-                dataframe['CONTAGEM'] = pd.to_numeric(dataframe['CONTAGEM'].str.replace(',', '.'), errors='coerce').fillna(0).astype(int)
-            elif num_columns == 1:  # Uma coluna
-                dataframe.columns = ['EAN']
-                dataframe['CONTAGEM'] = 1
-                dataframe = dataframe.groupby('EAN', as_index=False).agg({'CONTAGEM': 'sum'})
-            else:  # Qualquer outro número de colunas é inválido
-                st.error("O arquivo de contagem deve ter uma ou duas colunas.")
                 return None, None
 
     except pd.errors.EmptyDataError:
@@ -127,6 +287,30 @@ def process_upload(file, expected_type):
         return None, None
 
     return dataframe, expected_type
+
+
+# def process_upload(file, expected_type):
+#     if file is None:
+#         return None, None
+
+#     # Detectar extensão
+#     file_extension = file.name.split('.')[-1].lower()
+
+#     # Gerar hash do conteúdo do arquivo para usar no cache
+#     file_hash = gerar_hash(file)
+
+#     # Recarregar conteúdo e chamar a função cacheada
+#     file.seek(0)
+#     content = file.read()
+#     file.seek(0)
+
+#     dataframe, error = process_file_cached(content, file_extension, expected_type)
+
+#     if error:
+#         st.error(error)
+#         return None, None
+
+#     return dataframe, expected_type
 
 
 # Função para salvar métricas
@@ -160,6 +344,106 @@ def add_page_number(canvas, doc, orientation):
     width, height = A4 if orientation == "P" else A4[::-1]
     page_number_text = f"{doc.page}"
     canvas.drawRightString(width - 30, 35, page_number_text)  # Ajustado para alinhar no canto direito
+def grafico_resumo_inventario():
+    # Exemplo de dados (ajuste conforme a sua lógica)
+    contagem_total = 41459
+    divergencia_total = 218  # Sobra + Falta
+    contagem_correta = contagem_total - divergencia_total  # Exemplo
+    sobra = 207
+    falta = 11
+    pecas_sem_relidas = 2609
+
+    # Dados para o anel interno (visão geral)
+    inner_data = [
+        ("Contagem Correta", contagem_correta),
+        ("Não Contado", pecas_sem_relidas),
+        ("Divergência", divergencia_total),
+    ]
+
+    # Dados para o anel externo (detalhamento)
+    # Neste exemplo, detalhamos apenas a divergência
+    outer_data = [
+        ("Contagem Correta", contagem_correta),
+        ("Não Contado", pecas_sem_relidas),
+        ("Sobra", sobra),
+        ("Falta", falta),
+    ]
+
+    # Configuração do rich text para os labels externos
+    rich_formatter = {
+        "a": {"color": "#999", "lineHeight": 22, "align": "center"},
+        "abg": {
+            "backgroundColor": "#e3e3e3",
+            "width": "100%",
+            "align": "right",
+            "height": 22,
+            "borderRadius": [4, 4, 0, 0],
+        },
+        "hr": {
+            "borderColor": "#aaa",
+            "width": "100%",
+            "borderWidth": 0.5,
+            "height": 0,
+        },
+        "b": {"fontSize": 16, "lineHeight": 33},
+        "per": {
+            "color": "#eee",
+            "backgroundColor": "#334455",
+            "padding": [2, 4],
+            "borderRadius": 2,
+        },
+    }
+
+    pie = (
+        Pie(init_opts=opts.InitOpts(width="800px", height="800px", theme="dark"))
+        # Anel Interno: visão geral
+        .add(
+            series_name="Visão Geral",
+            data_pair=inner_data,
+            radius=[0, "35%"],
+            label_opts=opts.LabelOpts(
+                position="inner",
+                formatter="{b}: {c}",
+                color="#fff"
+            ),
+        )
+        # Anel Externo: detalhamento com labels formatados (caixinhas flutuantes)
+        .add(
+            series_name="Detalhamento",
+            data_pair=outer_data,
+            radius=["45%", "60%"],
+            label_opts=opts.LabelOpts(
+                position="outside",
+                formatter=(
+                    "{a|{a}}{abg|}\n{hr|}\n {b|{b}: }{c}  {per|{d}%}  "
+                ),
+                background_color="#101010",
+                border_color="#aaa",
+                border_width=1,
+                border_radius=4,
+                rich=rich_formatter,
+            ),
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="Resumo do Inventário",
+                subtitle="Acurácia: 99.47%",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(color="#fff"),
+                subtitle_textstyle_opts=opts.TextStyleOpts(color="#fff"),
+            ),
+            legend_opts=opts.LegendOpts(
+                pos_left="center",
+                pos_top="90%",
+                textstyle_opts=opts.TextStyleOpts(color="#fff"),
+            ),
+            tooltip_opts=opts.TooltipOpts(
+                trigger="item",
+                formatter="{a} <br/>{b}: {c} ({d}%)"
+            ),
+        )
+    )
+    return pie.render_embed()
 
 def generate_pdf(filtered_df, font_size, orientation):
     from reportlab.lib.pagesizes import A4, landscape, portrait
@@ -318,6 +602,44 @@ def generate_pdf(filtered_df, font_size, orientation):
     return pdf_output_path
 
 
+
+def generate_liquid_chart(accuracy_percentage: float) -> str:
+    """
+    Gera um gráfico Liquid usando pyecharts para representar a acurácia do inventário.
+    
+    Parâmetros:
+        accuracy_percentage (float): Acurácia em porcentagem (0 a 100).
+    
+    Retorna:
+        str: HTML embed do gráfico.
+    """
+    # Converter a porcentagem em uma razão (0 a 1)
+    ratio = accuracy_percentage /100
+    
+    # Criar o gráfico Liquid
+    liquid_chart = (
+        Liquid(init_opts=opts.InitOpts(width="550px", height="550px",is_horizontal_center=True))
+        .add(shape="circle",  # Formato do gráfico
+            is_animation=True,
+
+            outline_border_distance=16,  # Desativar animação
+            series_name="Acurácia",
+            data=[ratio],
+            is_outline_show=True,  # Remove o contorno, se desejar
+            center=["50%", "40%"],
+            # label_opts=opts.LabelOpts(formatter="{c*100:.0f}%"),
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="Acurácia do Inventário",
+                                      pos_left='center',
+                                      pos_top='top',
+                                      title_textstyle_opts=opts.TextStyleOpts(color="white")),
+            tooltip_opts=opts.TooltipOpts(trigger="item"),
+        )
+    )
+    # Retorna o HTML embed do gráfico
+    return liquid_chart.render_embed()
+
 # Função para gerar gráfico de pizza
 def generate_pie_chart(accuracy_percentage):
     labels = ['Acurácia', 'Inacurácia']
@@ -330,11 +652,39 @@ def display_data_table(df):
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_pagination(enabled=False)  # Desativar paginação
     gb.configure_side_bar(True)
-    gb.configure_selection('multiple', use_checkbox=True)
-    gb.configure_default_column(value=True, enableRowGroup=True, aggFunc='sum', editable=True, groupable=True, filter=True, sortable=True)
+    gb.configure_selection('multiple')
+    # gb.configure_column("REFERENCIA", type=["numericColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
+    # gb.configure_column("COR",type=["textColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
+    gb.configure_default_column(value=True, enableRowGroup=True, editable=False, groupable=True, filter=True, sortable=True)
     gb.configure_grid_options(domLayout='normal', enableEnterpriseModules=True, enableRangeSelection=True, suppressExcelExport=False, suppressMultiSort=False)  # Configurar altura automática para rolagem infinita
     grid_options = gb.build()
-
+    grid_options["enableRangeSelection"] = True
+    grid_options["enableCharts"] = True
+    grid_options["enableStatusBar"] = True
+    grid_options["enableFilter"] = True
+    grid_options["enableSorting"] = True
+    grid_options["groupDefaultExpanded"] = -1
+    grid_options["groupMultiAutoColumn"] = True
+    # Define o estilo visual da grade
+    grid_options["gridStyle"] = {
+        "border": "1px solid #4e4e4e",         # contorno
+        "borderColor": "#4e4e4e",
+        "borderWidth": "1px",
+        "borderStyle": "solid"
+    }
+    grid_options["rowStyle"] = {
+        "borderBottom": "1px solid #4e4e4e"
+    }
+    grid_options["rowHeight"] = 30
+    grid_options["headerHeight"] = 45
+    grid_options["autoGroupColumnDef"] = {
+        "headerName": "Produtos Agrupados",  # Nome desejado no lugar de "Group"
+        "minWidth": 300,
+        "cellRendererParams": {
+            "suppressCount": False,  # Se quiser ocultar a contagem de itens entre parênteses, use True
+            "checkbox": True  # <-- Isso coloca o checkbox na coluna agrupada!
+        }
+    }
     grid_response = AgGrid(
         df,
         gridOptions=grid_options,
@@ -358,13 +708,22 @@ def show_summary(discrepancies):
     """
     total_estoque = discrepancies['ESTOQUE'].sum()
     total_contagem_rfid = discrepancies['CONTAGEM'].sum()  # Soma total da contagem RFID
-    st.divider()
+    total_divergencia_positiva = int(discrepancies[discrepancies['DIVERGÊNCIA'] > 0]['DIVERGÊNCIA'].sum())
+    total_divergencia_negativa = int(discrepancies[discrepancies['DIVERGÊNCIA'] < 0]['DIVERGÊNCIA'].sum())
+    total_divergencia_absoluta = int(discrepancies['DIVERGÊNCIA'].abs().sum())
+
     st.subheader("Resumo Total")
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4, col5 = st.columns([2,2,1,1,1])
     with col1:
-        st.metric('Total Esperado em Estoque', total_estoque)
-    with col2:
-        st.metric('Total da Contagem com RFID', total_contagem_rfid)
+        st.metric('Total Esperado em Estoque', total_estoque, border=True)
+    with col2:    
+        st.metric('Total da Contagem com RFID', total_contagem_rfid, border=True)
+    with col3:
+        st.metric('Sobra',total_divergencia_positiva, border=True)
+    with col4:    
+        st.metric('Falta',total_divergencia_negativa, border=True)
+    with col5:    
+        st.metric('Divergência absoluta',total_divergencia_absoluta, border=True)
 
 def calculate_discrepancies(expected, counted, file_name):
     """
@@ -390,8 +749,8 @@ def calculate_discrepancies(expected, counted, file_name):
     discrepancies = pd.merge(expected, counted_aggregated, on='EAN', how='outer', suffixes=('_EXPECTED', '_COUNTED'))
 
     # Substitui NaN em 'ESTOQUE' e 'CONTAGEM' por 0
-    discrepancies['ESTOQUE'].fillna(0, inplace=True)
-    discrepancies['CONTAGEM'].fillna(0, inplace=True)
+    discrepancies['ESTOQUE'] = discrepancies['ESTOQUE'].fillna(0).astype(int)
+    discrepancies['CONTAGEM'] = discrepancies['CONTAGEM'].fillna(0).astype(int)
 
     # Converter as colunas 'ESTOQUE' e 'CONTAGEM' para numérico
     discrepancies['ESTOQUE'] = pd.to_numeric(discrepancies['ESTOQUE'], errors='coerce').fillna(0).astype(int)
@@ -406,3 +765,352 @@ def calculate_discrepancies(expected, counted, file_name):
     )
 
     return discrepancies
+
+# 1. KPI - Exibindo a acurácia via Gauge
+def kpi_gauge():
+    gauge = (
+        Gauge()
+        .add(
+            series_name="Acurácia",
+            data_pair=[("Acurácia", 99.47)],
+            min_=0,
+            max_=100,
+            detail_label_opts=opts.LabelOpts(formatter="{value}%")
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="Acurácia do Inventário", pos_left="center"),
+            tooltip_opts=opts.TooltipOpts(formatter="{a} <br/>{b}: {c}%")
+        )
+    )
+    return gauge
+
+# 2. KPI - Outros indicadores em gráfico de barras
+def kpi_bar():
+    # Exemplo de dados (ajuste conforme necessário)
+    kpis = ["Estoque Esperado", "Contagem Realizada", "Divergência Absoluta", "Peças a Recontar"]
+    values = [41263, 41459, 218, 2609]
+    bar = (
+        Bar()
+        .add_xaxis(kpis)
+        .add_yaxis("Valores", values)
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="KPIs do Inventário", pos_left="center"),
+            tooltip_opts=opts.TooltipOpts(trigger="axis")
+        )
+    )
+    return bar
+
+# 3. Comparativo Estoque x Contagem (gráfico de colunas simples)
+def comparativo_estoque_contagem():
+    categorias = ["Estoque Esperado", "Contagem Realizada"]
+    valores = [41263, 41459]
+    bar = (
+        Bar()
+        .add_xaxis(categorias)
+        .add_yaxis("Valores", valores)
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="Comparativo: Estoque x Contagem", pos_left="center"),
+            tooltip_opts=opts.TooltipOpts(trigger="axis")
+        )
+    )
+    return bar
+
+# 4. Gráfico de Pizza Aninhada – Distribuição dos Itens
+def nested_pie_chart():
+    # Dados de exemplo (ajuste conforme a lógica do seu inventário)
+    contagem_total = 41459
+    divergencia_total = 218  # soma de sobra e falta
+    contagem_correta = contagem_total - divergencia_total
+    sobra = 207
+    falta = 11
+    pecas_sem_relidas = 2609
+
+    # Anel interno – visão geral
+    inner_data = [
+        ("Contagem Correta", contagem_correta),
+        ("Não Contado", pecas_sem_relidas),
+        ("Divergência", divergencia_total),
+    ]
+    # Anel externo – detalhamento (dentro da divergência, mostra sobra e falta)
+    outer_data = [
+        ("Contagem Correta", contagem_correta),
+        ("Não Contado", pecas_sem_relidas),
+        ("Sobra", sobra),
+        ("Falta", falta),
+    ]
+
+    # Configuração do rich text para labels com caixinhas flutuantes
+    rich_formatter = {
+        "a": {"color": "#999", "lineHeight": 22, "align": "center"},
+        "abg": {
+            "backgroundColor": "#e3e3e3",
+            "width": "100%",
+            "align": "right",
+            "height": 22,
+            "borderRadius": [4, 4, 0, 0],
+        },
+        "hr": {"borderColor": "#aaa", "width": "100%", "borderWidth": 0.5, "height": 0},
+        "b": {"fontSize": 16, "lineHeight": 33},
+        "per": {"color": "#eee", "backgroundColor": "#334455", "padding": [2, 4], "borderRadius": 2},
+    }
+
+    pie = (
+        Pie(init_opts=opts.InitOpts(width="800px", height="600px", theme="dark"))
+        # Anel interno: visão geral
+        .add(
+            series_name="Visão Geral",
+            data_pair=inner_data,
+            radius=[0, "35%"],
+            label_opts=opts.LabelOpts(
+                position="inner",
+                formatter="{b}: {c}",
+                color="#fff"
+            ),
+        )
+        # Anel externo: detalhamento com labels formatados
+        .add(
+            series_name="Detalhamento",
+            data_pair=outer_data,
+            radius=["45%", "60%"],
+            label_opts=opts.LabelOpts(
+                position="outside",
+                formatter="{a|{a}}{abg|}\n{hr|}\n {b|{b}: }{c}  {per|{d}%}  ",
+                background_color="#eee",
+                border_color="#aaa",
+                border_width=1,
+                border_radius=4,
+                rich=rich_formatter,
+            ),
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="Resumo do Inventário",
+                subtitle="Acurácia: 99.47%",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(color="#fff"),
+                subtitle_textstyle_opts=opts.TextStyleOpts(color="#fff")
+            ),
+            legend_opts=opts.LegendOpts(pos_left="left", textstyle_opts=opts.TextStyleOpts(color="#fff")),
+            tooltip_opts=opts.TooltipOpts(trigger="item", formatter="{a} <br/>{b}: {c} ({d}%)"),
+        )
+    )
+    return pie
+
+# 5. Gráfico de Barras – Peças a Recontar por SKU
+def sku_recount_bar():
+    # Dados de exemplo – ajuste conforme os SKUs e a quantidade de peças a recontar
+    skus = ["SKU1", "SKU2", "SKU3", "SKU4", "SKU5"]
+    recounts = [50, 120, 30, 80, 60]
+    bar = (
+        Bar()
+        .add_xaxis(skus)
+        .add_yaxis("Peças a Recontar", recounts)
+        .reversal_axis()  # transforma em gráfico de barras horizontal
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="Peças a Recontar por SKU", pos_left="center"),
+            tooltip_opts=opts.TooltipOpts(trigger="axis")
+        )
+    )
+    return bar
+
+# 7. Dashboard – Combinando todos os gráficos em uma única página
+def dashboard():
+    page = Page(layout=Page.SimplePageLayout)
+    # Adiciona os gráficos conforme a ordem desejada
+    page.add(kpi_gauge())
+    page.add(kpi_bar())
+    page.add(comparativo_estoque_contagem())
+    page.add(nested_pie_chart())
+    page.add(sku_recount_bar())
+    # Renderiza o dashboard como HTML embed (pode usar page.render("dashboard.html") para gerar um arquivo)
+    return page.render_embed()
+
+def dynamic_dashboard(total_estoque: int,
+                      total_contagem: int,
+                      total_divergencia_absoluta: int,
+                      total_pecas_a_serem_relidas: int,
+                      accuracy_percentage: float,
+                      total_divergencia_positiva: int,
+                      total_divergencia_negativa: int) -> str:
+    # 1. KPI – Gauge da Acurácia
+    #reduzir as casas decimais da variavel accuracy_percentage para 2
+    accuracy_percentage = round(accuracy_percentage,2)
+    gauge = (
+        Gauge()
+        .add(
+            series_name="Acurácia",
+            data_pair=[("Acurácia", accuracy_percentage)],
+            min_=0,
+            max_=100,
+            # detail_label_opts=opts.LabelOpts(formatter="{value}%"),
+            detail_label_opts=opts.GaugeDetailOpts(
+                formatter="{value}%",  # Exibe o símbolo de porcentagem
+                color="#fff",          # Cor do valor central
+                font_size=26           # Ajuste se quiser maior ou menor
+            ),
+        )
+        .set_series_opts(
+            # Cor e estilo do arco do gauge
+            axisline_opts=opts.AxisLineOpts(
+                linestyle_opts=opts.LineStyleOpts(
+                    color=[(1, "#fff")],  # cor branca para todo o arco
+                    width=10
+                )
+            ),
+            # Risquinhos (ticks)
+            axistick_opts=opts.AxisTickOpts(
+                is_show=True,
+                length=8,
+                linestyle_opts=opts.LineStyleOpts(is_show=True,color="#fff")  # cor dos ticks
+            ),
+            # Labels do eixo (0, 10, 20 ... 100)
+            axislabel_opts=opts.LabelOpts(
+                is_show=True,
+                color="#fff"
+                ),        # cor dos valores no eixo
+            # Linhas de divisão entre faixas
+            splitline_opts=opts.SplitLineOpts(
+                is_show=True,
+                linestyle_opts=opts.LineStyleOpts(
+                    is_show=True,
+                    width=25,
+                    opacity=0.2,
+                    color="#fff")  # cor das linhas de divisão
+            ),
+            # IMPORTANTE: É aqui que alteramos a cor dos valores numéricos (0, 10, 20, ... 100)
+            label_opts=opts.LabelOpts(
+                is_show=True,
+                color="blue",
+                font_size=50,
+                background_color="white"
+                )
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="Acurácia do Inventário",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(color="#fff")  # Título em branco
+            ),
+            legend_opts=opts.LegendOpts(is_show=False),
+            tooltip_opts=opts.TooltipOpts(formatter="{a} <br/>{b}: {c}%")
+        )
+    )
+    
+    # 2. KPI – Gráfico de Barras com indicadores principais
+    # kpi_bar_chart = (
+    #     Bar()
+    #     .add_xaxis(["Estoque Esperado", "Contagem Realizada", "Divergência Absoluta", "Peças a Recontar"])
+    #     .add_yaxis("Valores", [total_estoque, total_contagem, total_divergencia_absoluta, total_pecas_a_serem_relidas])
+    #     .set_global_opts(
+    #         title_opts=opts.TitleOpts(
+    #             title="KPIs do Inventário",
+    #             pos_left="center",
+    #             title_textstyle_opts=opts.TextStyleOpts(color="white")
+    #             ),
+    #         tooltip_opts=opts.TooltipOpts(trigger="axis"),
+    #         legend_opts=opts.LegendOpts(is_show=False)
+    #     )
+    # )
+    
+    # 3. Comparativo Estoque x Contagem
+    comparativo_chart = (
+        Bar()
+        .add_xaxis(["Estoque Esperado", "Contagem Realizada"])
+        .add_yaxis("Valores", [total_estoque, total_contagem])
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="Comparativo: Estoque x Contagem",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(color="white")
+                ),
+            tooltip_opts=opts.TooltipOpts(trigger="axis"),
+            legend_opts=opts.LegendOpts(is_show=False),
+        )
+    )
+    
+    # 4. Gráfico de Pizza Aninhada – Distribuição dos Itens
+    # Definindo a "contagem correta" como a contagem realizada sem a divergência
+    contagem_correta = total_contagem - total_divergencia_absoluta
+    inner_data = [
+        # ("Contagem Correta", contagem_correta),
+        # ("Não Contado", total_pecas_relidas),
+        ("Divergência", total_divergencia_absoluta),
+    ]
+    outer_data = [
+        # ("Contagem Correta", contagem_correta),
+        #("Não Contado", total_pecas_relidas),
+        ("Sobra", total_divergencia_positiva),
+        ("Falta", abs(total_divergencia_negativa)),
+    ]
+    
+    # Configuração do rich text para as "caixinhas flutuantes" dos labels
+    rich_formatter = {
+        "a": {"color": "#999", "lineHeight": 22, "align": "center"},
+        "abg": {
+            "backgroundColor": "#e3e3e3",
+            "width": "100%",
+            "align": "right",
+            "height": 22,
+            "borderRadius": [4, 4, 0, 0],
+        },
+        "hr": {"borderColor": "#aaa", "width": "100%", "borderWidth": 0.5, "height": 0},
+        "b": {"fontSize": 16, "lineHeight": 33},
+        "per": {"color": "#eee", "backgroundColor": "#334455", "padding": [2, 4], "borderRadius": 2},
+    }
+    
+    nested_pie = (
+        Pie(init_opts=opts.InitOpts(width="800px", height="600px"))
+        .add(
+            series_name="Visão Geral",
+            data_pair=inner_data,
+            radius=[0, "35%"],
+            label_opts=opts.LabelOpts(
+                position="inner",
+                formatter="{b}: {c}",
+                color="#fff"
+            )
+        )
+        .add(
+            series_name="Detalhamento",
+            data_pair=outer_data,
+            radius=["45%", "60%"],
+            label_opts=opts.LabelOpts(
+                position="outside",
+                formatter="{a|{a}}{abg|}\n{hr|}\n {b|{b}: }{c}  {per|{d}%}  ",
+                background_color="#eee",
+                border_color="#aaa",
+                border_width=1,
+                border_radius=4,
+                rich=rich_formatter,
+            )
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(
+                title="Resumo do Inventário",
+                subtitle=f"Acurácia: {accuracy_percentage:.2f}%",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(color="#fff"),
+                subtitle_textstyle_opts=opts.TextStyleOpts(color="#fff")
+            ),
+            legend_opts=opts.LegendOpts(
+                pos_left="center",
+                pos_top="90%",
+                textstyle_opts=opts.TextStyleOpts(color="#fff")
+            ),
+            tooltip_opts=opts.TooltipOpts(
+                trigger="item",
+                formatter="{a} <br/>{b}: {c} ({d}%)"
+            )
+        )
+    )
+    
+    # 5. (Opcional) Se houver gráfico por SKU, você pode criar aqui um gráfico de barras agrupado.
+    # Por exemplo, agrupar 'PEÇAS A SEREM RELIDAS' por 'REFERENCIA' ou outro identificador.
+    
+    # Combina os gráficos em uma única página (dashboard)
+    page = Page(layout=Page.SimplePageLayout)
+    page.add(gauge)
+    # page.add(kpi_bar_chart)
+    page.add(comparativo_chart)
+    page.add(nested_pie)
+    return page.render_embed()

@@ -19,7 +19,7 @@ import numpy as np
 from utils.config import *
 
 # Configurações padrão do Streamlit
-st.set_page_config(layout="wide", page_title="Análise de Divergência", page_icon="📊", initial_sidebar_state="auto",menu_items={'Report a bug': 'https://wa.me/5588993201518','About':'''
+st.set_page_config(layout="wide", page_title="Análise de Divergência", page_icon="📊", initial_sidebar_state="collapsed",menu_items={'Report a bug': 'https://wa.me/5588993201518','About':'''
 # Sobre a aplicação
 Aplicação para análise de divergência de inventários.
 \nFeita por [Votu RFID](https://www.voturfid.com.br)
@@ -117,46 +117,68 @@ if estoque_df is not None and contagem_df is not None:
 
     discrepancies = calculate_discrepancies(expected_df, counted_df, file_name)
     all_discrepancies[file_name] = discrepancies
-
+    show_summary(discrepancies)
+    st.divider()
     # Exibir tabela de dados filtrados
     filtered_df = display_data_table(discrepancies)
-
     # Mostrar resumo
-    show_summary(discrepancies)
-
+    
     # Exibir métricas do resumo dinâmico
     if not filtered_df.empty:
         total_estoque = int(filtered_df['ESTOQUE'].sum())
+        print("---")
+        print("total_estoque: ",total_estoque)
         total_contagem = int(filtered_df['CONTAGEM'].sum())
+        print("total_contagem: ",total_contagem)
         total_divergencia_positiva = int(filtered_df[filtered_df['DIVERGÊNCIA'] > 0]['DIVERGÊNCIA'].sum())
+        print("total_divergencia_positiva: ",total_divergencia_positiva)
         total_divergencia_negativa = int(filtered_df[filtered_df['DIVERGÊNCIA'] < 0]['DIVERGÊNCIA'].sum())
+        print("total_divergencia_negativa: ",total_divergencia_negativa)
         total_divergencia_absoluta = int(filtered_df['DIVERGÊNCIA'].abs().sum())
+        print("total_divergencia_absoluta: ",total_divergencia_absoluta)
         total_pecas_a_serem_relidas = filtered_df[filtered_df['DIVERGÊNCIA'] != 0]['PEÇAS A SEREM RELIDAS'].sum()
+        print("total_pecas_a_serem_relidas: ",total_pecas_a_serem_relidas)
 
         st.subheader("Resumo Dinâmico")
-        st.caption("Valores filtrados")
+        st.caption("(valores filtrados na tabela)")
         col5, col6, col7 = st.columns(3)
         with col5:
-            st.metric("Estoque Esperado", total_estoque)
+            st.metric("Estoque Esperado", total_estoque,border=True)
         with col6:
-            st.metric('Total da Contagem', total_contagem)
-        accuracy_percentage = ((total_estoque - total_divergencia_absoluta) / total_estoque * 100) if total_estoque != 0 else 0
+            st.metric('Total da Contagem com RFID', total_contagem,border=True)
+        # accuracy_percentage = ((total_estoque - total_divergencia_absoluta) / total_estoque * 100) if total_estoque != 0 else 0
+        # contagem_correta = total_estoque-total_divergencia_absoluta
+        # print("contagem_correta: ",contagem_correta)
+        # if total_estoque > 0:
+        #     accuracy_percentage = max(0, (1 - (total_divergencia_absoluta / total_estoque)) * 100)
+        # else:
+        #     accuracy_percentage = 0  # ou 'N/A' 
+        # accuracy_percentage = max(0, (contagem_correta / total_estoque) * 100)
+        # if total_contagem == total_estoque:
+        #     accuracy_percentage = 100
+        # if total_contagem < total_estoque:
+        #     accuracy_percentage = (total_contagem / total_estoque) * 100
+        # if total_contagem > total_estoque:
+        #     accuracy_percentage = (total_estoque / total_contagem) * 100
+        accuracy_percentage = (1 - (total_divergencia_absoluta / total_estoque))*100
+        print("accurracy_percentage: ",accuracy_percentage)
         with col7:
-            st.metric("Acurácia do Inventário", f"{accuracy_percentage:.2f}%")
+            st.metric("Acurácia do Inventário", f"{accuracy_percentage:.2f}%",border=True)
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             sobra_percentage = (total_divergencia_positiva / total_estoque) * 100 if total_estoque != 0 else 0
-            st.metric("Sobra", total_divergencia_positiva, delta=f"{sobra_percentage:.2f}%", delta_color='inverse')
+            st.metric("Sobra", total_divergencia_positiva, delta=f"{sobra_percentage:.2f}%", delta_color='inverse',border=True)
+
         with col2:
             falta_percentage = (abs(total_divergencia_negativa) / total_estoque) * 100 if total_estoque != 0 else 0
-            st.metric("Falta", total_divergencia_negativa, delta=f"{falta_percentage:.2f}%", delta_color='inverse')
+            st.metric("Falta", total_divergencia_negativa, delta=f"{falta_percentage:.2f}%", delta_color='inverse',border=True)
         with col3:
             divergencia_absoluta_percentage = (total_divergencia_absoluta / total_estoque) * 100 if total_estoque != 0 else 0
-            st.metric("Divergência Absoluta", total_divergencia_absoluta, delta=f"{divergencia_absoluta_percentage:.2f}%", delta_color='inverse')
+            st.metric("Divergência Absoluta", total_divergencia_absoluta, delta=f"{divergencia_absoluta_percentage:.2f}%", delta_color='inverse',border=True)
         with col4:
             pecas_relidas_percentage = (total_pecas_a_serem_relidas / total_estoque) * 100 if total_estoque != 0 else 0
-            st.metric("Peças a Serem Relidas", f"{int(total_pecas_a_serem_relidas)}", delta=f"{pecas_relidas_percentage:.2f}%", delta_color='inverse')
+            st.metric("Peças a Serem Relidas", f"{int(total_pecas_a_serem_relidas)}", delta=f"{pecas_relidas_percentage:.2f}%", delta_color='inverse',border=True)
         
         # Salvar métricas no arquivo JSON
         metrics = {
@@ -172,9 +194,27 @@ if estoque_df is not None and contagem_df is not None:
 
     # Gerar gráfico de pizza para acurácia
     st.divider()
-    fig_pie_chart = generate_pie_chart(accuracy_percentage)
-    st.plotly_chart(fig_pie_chart)
-
+    # col_graph1,col_graph2 = st.columns(2)
+    # with col_graph1:
+    #     fig_pie_chart = generate_pie_chart(accuracy_percentage)
+    #     st.plotly_chart(fig_pie_chart)
+    # with col_graph2:
+    # liquid_html = generate_liquid_chart(accuracy_percentage)
+    # nested_html= grafico_resumo_inventario()
+    # components.html(liquid_html, height=400)
+    # components.html(nested_html,height=1000)
+    dashboard_html = dynamic_dashboard(
+        total_estoque,
+        total_contagem,
+        total_divergencia_absoluta,
+        total_pecas_a_serem_relidas,
+        accuracy_percentage,
+        total_divergencia_positiva,
+        total_divergencia_negativa
+    )
+    
+    components.html(dashboard_html,height=1600)
+    st.divider()
     # Botão para gerar PDF
     if st.button("Gerar PDF"):
         with st.spinner('Gerando o PDF, por favor aguarde...'):
