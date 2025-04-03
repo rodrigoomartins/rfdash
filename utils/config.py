@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
 from pyxlsb import open_workbook as open_xlsb
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 from datetime import datetime
 import unidecode
-from reportlab.lib.pagesizes import A4, landscape, portrait
+from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -16,10 +15,8 @@ import tempfile
 import json
 import os
 import numpy as np
-import streamlit.components.v1 as components
-from streamlit.components.v1 import html, declare_component
 import hashlib
-from pyecharts.charts import Pie,Liquid, Bar, Line, Gauge, Page
+from pyecharts.charts import Pie, Liquid, Bar, Gauge, Page
 from pyecharts import options as opts
 
 def gerar_hash(file):

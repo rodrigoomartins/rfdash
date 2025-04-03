@@ -1,22 +1,7 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
-from pyxlsb import open_workbook as open_xlsb
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
-from datetime import datetime
-import unidecode
-from reportlab.lib.pagesizes import A4, landscape, portrait
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
-import time
-import plotly.express as px
-import tempfile
-import json
-import os
-import numpy as np
-from utils.config import *
+from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf
+import streamlit.components.v1 as components
 
 # Configurações padrão do Streamlit
 st.set_page_config(layout="wide", page_title="Análise de Divergência", page_icon="📊", initial_sidebar_state="collapsed",menu_items={'Report a bug': 'https://wa.me/5588993201518','About':'''
