@@ -695,6 +695,8 @@ def display_data_table(df):
         suppressMultiSort=False,
         enableCharts=True
     )  # Configurar altura automática para rolagem infinita
+    # Aplica filtros inteligentes por coluna
+    configurar_colunas_com_filtros_dinamicos(gb, df)
     grid_options = gb.build()
     grid_options["enableRangeSelection"] = True
     grid_options["enableCharts"] = True
