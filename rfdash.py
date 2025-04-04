@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
-from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf
+from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory
 import streamlit.components.v1 as components
+from streamlit_option_menu import option_menu
+import base64
 
 # Configurações padrão do Streamlit
 st.set_page_config(layout="wide", page_title="Análise de Divergência", page_icon="📊", initial_sidebar_state="collapsed",menu_items={'Report a bug': 'https://wa.me/5588993201518','About':'''
@@ -104,8 +106,96 @@ if estoque_df is not None and contagem_df is not None:
     all_discrepancies[file_name] = discrepancies
     show_summary(discrepancies)
     st.divider()
+    # opcao = st.radio("Filtro rápido",[
+    #     "Tudo",
+    #     "Divergências",
+    #     "Sobra",
+    #     "Falta"
+    # ],
+    # horizontal=True
+    # )
+    # # Aplicar filtro de acordo com a seleção
+    # if opcao == "Divergências":
+    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] != 0]
+    # elif opcao == "Sobra":
+    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] > 0]
+    # elif opcao == "Falta":
+    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] < 0]
+    # else:
+    #     df_filtrado = discrepancies
     # Exibir tabela de dados filtrados
-    filtered_df = display_data_table(discrepancies)
+    col_filtro1, col_filtro2 = st.columns([1,5])
+    with col_filtro1:
+    #     filtro=option_menu(
+    #         menu_title=None,
+    #         options=[
+    #             "Tudo",
+    #             "Divergências",
+    #             "Sobra",
+    #             "Falta"
+    #         ],
+    #         icons=[
+    #             "list",
+    #             "exclamation-triangle",
+    #             "arrow-up",
+    #             "arrow-down"
+    #         ],
+    #         orientation="horizontal",
+    #         default_index=0,
+    #         styles={
+    #             "container": {
+    #                 "display": "flex",
+    #                 "justify-content": "flex-start",  # Alinhamento à esquerda
+    #                 "padding": "0px",
+    #                 "margin-bottom": "12px",
+    #                 "background-color": "#111",  # Mais discreto
+    #                 "border-radius": "6px",
+    #                 "flex-wrap": "wrap",  # Garante que quebra em telas menores
+    #             },
+    #             "icon": {"color": "white", "font-size": "12px"},
+    #             "nav-link": {
+    #                 "font-size": "12px",
+    #                 "padding": "2px 10px",  # Reduz a altura/largura
+    #                 "margin": "0 2px",
+    #                 "color": "#ccc",
+    #                 "--hover-color": "#222",
+    #                 "border-radius": "4px"
+    #             },
+    #             "nav-link-selected": {
+    #                 "background-color": "#2d4030",
+    #                 "color": "#fff",
+    #                 "font-weight": "600"
+    #             },
+    #         }
+    #     )
+        # Aplica estilo CSS personalizado
+        st.markdown("""
+            <style>
+            div[data-baseweb="select"] {
+                font-size: 14px !important;
+                width: 250px !important;
+            }
+            label {
+                font-size: 12px !important;
+                color: #fff;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Selectbox normal
+        filtro = st.selectbox(
+            "Filtro rápido:",
+            ["Tudo", "Divergências", "Sobra", "Falta"],
+        )
+    if filtro == "Divergências":
+        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] != 0]
+    elif filtro == "Sobra":
+        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] > 0]
+    elif filtro == "Falta":
+        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] < 0]
+    else:
+        df_filtrado = discrepancies
+    filtered_df = display_data_table(df_filtrado)
     # Mostrar resumo
     
     # Exibir métricas do resumo dinâmico
@@ -198,17 +288,52 @@ if estoque_df is not None and contagem_df is not None:
         total_divergencia_negativa
     )
     
-    components.html(dashboard_html,height=1600)
-    st.divider()
-    # Botão para gerar PDF
-    if st.button("Gerar PDF"):
+    # # Botão para gerar PDF
+    # if st.button("Gerar PDF"):
+    #     with st.spinner('Gerando o PDF, por favor aguarde...'):
+    #         pdf_path = generate_pdf(filtered_df, font_size=8, orientation="L")
+    #         if pdf_path:
+    #             with open(pdf_path, "rb") as pdf_file:
+    #                 st.download_button(
+    #                     label="Baixar PDF",
+    #                     data=pdf_file,
+    #                     file_name="relatorio_divergencia_inventario.pdf",
+    #                     mime="application/pdf"
+    #                 )
+
+    # Na sua página Streamlit:
+    if st.button("Gerar e Baixar PDF"):
         with st.spinner('Gerando o PDF, por favor aguarde...'):
-            pdf_path = generate_pdf(filtered_df, font_size=8, orientation="L")
-            if pdf_path:
-                with open(pdf_path, "rb") as pdf_file:
-                    st.download_button(
-                        label="Baixar PDF",
-                        data=pdf_file,
-                        file_name="relatorio_divergencia_inventario.pdf",
-                        mime="application/pdf"
-                    )
+            try:
+                # Supondo que filtered_df já está definido
+                pdf_bytes = generate_pdf_in_memory(filtered_df, font_size=8, orientation="L")
+                
+                # Codificar em base64 para o download automático
+                b64 = base64.b64encode(pdf_bytes).decode()
+                
+                # HTML/JavaScript para forçar o download automaticamente
+                download_js = f"""
+                <script>
+                function downloadFile() {{
+                    const link = document.createElement('a');
+                    link.href = 'data:application/pdf;base64,{b64}';
+                    link.download = 'relatorio_divergencia_inventario.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }}
+                window.onload = downloadFile;
+                </script>
+                """
+                
+                # Exibir o componente que vai disparar o JavaScript
+                st.components.v1.html(download_js, height=0)
+                
+                # Feedback adicional
+                st.success("PDF gerado com sucesso! O download deve iniciar automaticamente.")
+                
+            except Exception as e:
+                st.error(f"Erro ao gerar o PDF: {str(e)}")
+
+    with st.expander("Gráficos de Resumo", expanded=False,icon='📊'):
+        components.html(dashboard_html,height=1600)

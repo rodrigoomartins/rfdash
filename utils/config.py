@@ -4,12 +4,13 @@ from pyxlsb import open_workbook as open_xlsb
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 from datetime import datetime
 import unidecode
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape, portrait
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 import time
+from io import BytesIO
 import plotly.express as px
 import tempfile
 import json
@@ -18,6 +19,8 @@ import numpy as np
 import hashlib
 from pyecharts.charts import Pie, Liquid, Bar, Gauge, Page
 from pyecharts import options as opts
+from st_aggrid.shared import JsCode
+import streamlit.components.v1 as components
 
 def gerar_hash(file):
     """
@@ -442,38 +445,200 @@ def grafico_resumo_inventario():
     )
     return pie.render_embed()
 
-def generate_pdf(filtered_df, font_size, orientation):
-    from reportlab.lib.pagesizes import A4, landscape, portrait
-    # Colunas obrigatórias
+# def generate_pdf(filtered_df, font_size, orientation):
+#     from reportlab.lib.pagesizes import A4, landscape, portrait
+#     # Colunas obrigatórias
+#     required_columns = ['EAN', 'ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA']
+#     missing_columns = [col for col in required_columns if col not in filtered_df.columns]
+#     if missing_columns:
+#         st.error(f"Colunas ausentes no DataFrame: {', '.join(missing_columns)}. Não é possível gerar o PDF.")
+#         return None
+
+#     # Substituir valores NaN por '-'
+#     filtered_df = filtered_df.fillna('-')
+
+#     # Renomear a coluna 'TAMANHO' para 'TAM' se existir
+#     if 'TAMANHO' in filtered_df.columns:
+#         filtered_df = filtered_df.rename(columns={'TAMANHO': 'TAM'})
+
+#     # Remover a coluna 'PEÇAS A SEREM RELIDAS' se existir
+#     if 'PEÇAS A SEREM RELIDAS' in filtered_df.columns:
+#         filtered_df = filtered_df.drop(columns=['PEÇAS A SEREM RELIDAS'])
+
+#     # Criar um arquivo temporário para o PDF
+#     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+#         pdf_output_path = tmp_pdf.name
+
+#     # Definir a orientação e tamanho da página
+#     if orientation == "P":
+#         pagesize = portrait(A4)
+#     else:
+#         pagesize = landscape(A4)
+
+#     pdf = SimpleDocTemplate(
+#         pdf_output_path,
+#         pagesize=pagesize,
+#         rightMargin=20,
+#         leftMargin=20,
+#         topMargin=50,
+#         bottomMargin=50
+#     )
+
+#     # Estilo de texto
+#     styles = getSampleStyleSheet()
+#     styles["Title"].alignment = TA_CENTER
+
+#     # Estilo para as células da tabela
+#     cell_style = ParagraphStyle(
+#         name='CellStyle',
+#         parent=styles['Normal'],
+#         fontSize=font_size,
+#         wordWrap='CJK',
+#         leading=font_size + 2,  # Espaçamento entre linhas
+#     )
+
+#     # Cabeçalho da tabela e colunas a incluir
+#     col_widths = {
+#         'PRODUTO': 0.08,
+#         'EAN': 0.10,
+#         'REFERENCIA': 0.10,
+#         'DESCRICAO': 0.32,
+#         'COR': 0.10,
+#         'TAM': 0.06,
+#         'ESTOQUE': 0.06,
+#         'CONTAGEM': 0.07,
+#         'DIVERGÊNCIA': 0.08
+#     }
+
+#     # Filtrar apenas as colunas presentes no DataFrame
+#     columns_to_include = [col for col in ['PRODUTO', 'EAN', 'REFERENCIA', 'DESCRICAO', 'COR', 'TAM', 'ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA'] if col in filtered_df.columns]
+#     headers = columns_to_include
+
+#     # Ajustar col_widths de acordo com as colunas presentes
+#     col_widths_in_use = {col: col_widths[col] for col in columns_to_include}
+
+#     # Normalizar col_widths_in_use para que a soma seja 1
+#     total_width = sum(col_widths_in_use.values())
+#     col_widths_in_use = {col: width / total_width for col, width in col_widths_in_use.items()}
+
+#     # Calcular as larguras reais das colunas
+#     page_width = pdf.width
+#     col_width_values = [page_width * col_widths_in_use[col] for col in columns_to_include]
+
+#     # Lista de elementos a serem adicionados no PDF
+#     elements = []
+#     elements.append(Paragraph("Relatório de Divergência de Inventário", styles['Title']))
+#     elements.append(Spacer(1, 12))
+
+#     # **Adicionar o Resumo ao PDF**
+#     # Calcular os valores do resumo
+#     if not filtered_df.empty:
+#         total_estoque = int(filtered_df['ESTOQUE'].astype(float).sum())
+#         total_contagem = int(filtered_df['CONTAGEM'].astype(float).sum())
+#         total_divergencia_positiva = int(filtered_df[filtered_df['DIVERGÊNCIA'].astype(float) > 0]['DIVERGÊNCIA'].astype(float).sum())
+#         total_divergencia_negativa = int(filtered_df[filtered_df['DIVERGÊNCIA'].astype(float) < 0]['DIVERGÊNCIA'].astype(float).sum())
+#         total_divergencia_absoluta = int(filtered_df['DIVERGÊNCIA'].astype(float).abs().sum())
+#     else:
+#         total_estoque = total_contagem = total_divergencia_positiva = total_divergencia_negativa = total_divergencia_absoluta = 0
+
+#     # Adicionando o resumo ao PDF
+#     resumo = [
+#         f"Total Esperado em Estoque: {total_estoque}",
+#         f"Total da Contagem: {total_contagem}",
+#         f"Divergência Positiva (Sobrando): {total_divergencia_positiva}",
+#         f"Divergência Negativa (Faltando): {total_divergencia_negativa}",
+#         f"Divergência Absoluta: {total_divergencia_absoluta}"
+#     ]
+
+#     for linha in resumo:
+#         elements.append(Paragraph(linha, styles['Normal']))
+#         elements.append(Spacer(1, 6))
+
+#     elements.append(Spacer(1, 12))
+
+#     # Definir os dados da tabela
+#     data = [headers]
+
+#     # Iterar pelas linhas do DataFrame e adicionar ao 'data'
+#     for i, row in filtered_df.iterrows():
+#         try:
+#             row_data = []
+#             for col in columns_to_include:
+#                 value = str(row[col]) if col in row else '-'
+#                 para = Paragraph(value, cell_style)
+#                 row_data.append(para)
+#             data.append(row_data)
+#         except Exception as e:
+#             st.error(f"Erro ao processar a linha {i}. Detalhes: {e}")
+#             continue
+
+#     # Criar a tabela com os dados e larguras de coluna ajustadas
+#     table = Table(data, colWidths=col_width_values, repeatRows=1)
+
+#     # Estilo da tabela
+#     style = TableStyle([
+#         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Cabeçalho
+#         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+#         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+#         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+#         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+#         ('FONTSIZE', (0, 0), (-1, -1), font_size),
+#         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+#         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+#         ('WORDWRAP', (0, 0), (-1, -1), True),
+#     ])
+
+#     # Aplicando cores alternadas às linhas de dados
+#     for row_index, _ in enumerate(data[1:], start=1):
+#         bg_color = colors.whitesmoke if row_index % 2 == 0 else colors.lightgrey
+#         style.add('BACKGROUND', (0, row_index), (-1, row_index), bg_color)
+
+#     table.setStyle(style)
+#     elements.append(table)
+
+#     # Adicionar rodapé com número de páginas
+#     pdf.build(elements, onFirstPage=lambda canv, doc: add_page_number(canv, doc, orientation),
+#               onLaterPages=lambda canv, doc: add_page_number(canv, doc, orientation))
+#     return pdf_output_path
+
+def add_page_number(canvas, doc, orientation):
+    canvas.saveState()
+    if orientation == "P":
+        canvas.setFont("Helvetica", 8)
+        canvas.drawRightString(A4[0] - 20, 20, f"Página {doc.page}")
+    else:
+        canvas.setFont("Helvetica", 8)
+        canvas.drawRightString(A4[1] - 20, 20, f"Página {doc.page}")
+    canvas.restoreState()
+
+def generate_pdf_in_memory(filtered_df, font_size, orientation):
+    """Versão modificada da generate_pdf que trabalha em memória"""
+    # Verificação de colunas obrigatórias
     required_columns = ['EAN', 'ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA']
     missing_columns = [col for col in required_columns if col not in filtered_df.columns]
     if missing_columns:
-        st.error(f"Colunas ausentes no DataFrame: {', '.join(missing_columns)}. Não é possível gerar o PDF.")
-        return None
+        raise ValueError(f"Colunas ausentes no DataFrame: {', '.join(missing_columns)}")
 
     # Substituir valores NaN por '-'
     filtered_df = filtered_df.fillna('-')
 
-    # Renomear a coluna 'TAMANHO' para 'TAM' se existir
+    # Renomear/remover colunas conforme necessário
     if 'TAMANHO' in filtered_df.columns:
         filtered_df = filtered_df.rename(columns={'TAMANHO': 'TAM'})
-
-    # Remover a coluna 'PEÇAS A SEREM RELIDAS' se existir
     if 'PEÇAS A SEREM RELIDAS' in filtered_df.columns:
         filtered_df = filtered_df.drop(columns=['PEÇAS A SEREM RELIDAS'])
 
-    # Criar um arquivo temporário para o PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
-        pdf_output_path = tmp_pdf.name
+    # Criar buffer em memória
+    buffer = BytesIO()
 
-    # Definir a orientação e tamanho da página
+    # Definir orientação
     if orientation == "P":
         pagesize = portrait(A4)
     else:
         pagesize = landscape(A4)
 
     pdf = SimpleDocTemplate(
-        pdf_output_path,
+        buffer,
         pagesize=pagesize,
         rightMargin=20,
         leftMargin=20,
@@ -481,20 +646,19 @@ def generate_pdf(filtered_df, font_size, orientation):
         bottomMargin=50
     )
 
-    # Estilo de texto
+    # Estilos
     styles = getSampleStyleSheet()
     styles["Title"].alignment = TA_CENTER
 
-    # Estilo para as células da tabela
     cell_style = ParagraphStyle(
         name='CellStyle',
         parent=styles['Normal'],
         fontSize=font_size,
         wordWrap='CJK',
-        leading=font_size + 2,  # Espaçamento entre linhas
+        leading=font_size + 2,
     )
 
-    # Cabeçalho da tabela e colunas a incluir
+    # Configurações de colunas
     col_widths = {
         'PRODUTO': 0.08,
         'EAN': 0.10,
@@ -507,28 +671,21 @@ def generate_pdf(filtered_df, font_size, orientation):
         'DIVERGÊNCIA': 0.08
     }
 
-    # Filtrar apenas as colunas presentes no DataFrame
     columns_to_include = [col for col in ['PRODUTO', 'EAN', 'REFERENCIA', 'DESCRICAO', 'COR', 'TAM', 'ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA'] if col in filtered_df.columns]
     headers = columns_to_include
 
-    # Ajustar col_widths de acordo com as colunas presentes
+    # Ajustar larguras das colunas
     col_widths_in_use = {col: col_widths[col] for col in columns_to_include}
-
-    # Normalizar col_widths_in_use para que a soma seja 1
     total_width = sum(col_widths_in_use.values())
     col_widths_in_use = {col: width / total_width for col, width in col_widths_in_use.items()}
+    col_width_values = [pdf.width * col_widths_in_use[col] for col in columns_to_include]
 
-    # Calcular as larguras reais das colunas
-    page_width = pdf.width
-    col_width_values = [page_width * col_widths_in_use[col] for col in columns_to_include]
-
-    # Lista de elementos a serem adicionados no PDF
+    # Elementos do PDF
     elements = []
     elements.append(Paragraph("Relatório de Divergência de Inventário", styles['Title']))
     elements.append(Spacer(1, 12))
 
-    # **Adicionar o Resumo ao PDF**
-    # Calcular os valores do resumo
+    # Adicionar resumo
     if not filtered_df.empty:
         total_estoque = int(filtered_df['ESTOQUE'].astype(float).sum())
         total_contagem = int(filtered_df['CONTAGEM'].astype(float).sum())
@@ -538,7 +695,6 @@ def generate_pdf(filtered_df, font_size, orientation):
     else:
         total_estoque = total_contagem = total_divergencia_positiva = total_divergencia_negativa = total_divergencia_absoluta = 0
 
-    # Adicionando o resumo ao PDF
     resumo = [
         f"Total Esperado em Estoque: {total_estoque}",
         f"Total da Contagem: {total_contagem}",
@@ -553,10 +709,8 @@ def generate_pdf(filtered_df, font_size, orientation):
 
     elements.append(Spacer(1, 12))
 
-    # Definir os dados da tabela
+    # Dados da tabela
     data = [headers]
-
-    # Iterar pelas linhas do DataFrame e adicionar ao 'data'
     for i, row in filtered_df.iterrows():
         try:
             row_data = []
@@ -566,15 +720,11 @@ def generate_pdf(filtered_df, font_size, orientation):
                 row_data.append(para)
             data.append(row_data)
         except Exception as e:
-            st.error(f"Erro ao processar a linha {i}. Detalhes: {e}")
-            continue
+            raise ValueError(f"Erro ao processar a linha {i}. Detalhes: {e}")
 
-    # Criar a tabela com os dados e larguras de coluna ajustadas
     table = Table(data, colWidths=col_width_values, repeatRows=1)
-
-    # Estilo da tabela
     style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Cabeçalho
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -585,7 +735,6 @@ def generate_pdf(filtered_df, font_size, orientation):
         ('WORDWRAP', (0, 0), (-1, -1), True),
     ])
 
-    # Aplicando cores alternadas às linhas de dados
     for row_index, _ in enumerate(data[1:], start=1):
         bg_color = colors.whitesmoke if row_index % 2 == 0 else colors.lightgrey
         style.add('BACKGROUND', (0, row_index), (-1, row_index), bg_color)
@@ -593,12 +742,13 @@ def generate_pdf(filtered_df, font_size, orientation):
     table.setStyle(style)
     elements.append(table)
 
-    # Adicionar rodapé com número de páginas
-    pdf.build(elements, onFirstPage=lambda canv, doc: add_page_number(canv, doc, orientation),
+    # Construir PDF
+    pdf.build(elements, 
+              onFirstPage=lambda canv, doc: add_page_number(canv, doc, orientation),
               onLaterPages=lambda canv, doc: add_page_number(canv, doc, orientation))
-    return pdf_output_path
-
-
+    
+    buffer.seek(0)
+    return buffer.getvalue()
 
 def generate_liquid_chart(accuracy_percentage: float) -> str:
     """
@@ -649,7 +799,7 @@ def configurar_colunas_com_filtros_dinamicos(gb, df):
     texto_keywords = ['EAN', 'PRODUTO', 'MODELO', 'COR', 'TAM', 'DESCRIÇÃO', 'REFERÊNCIA', 'NOME']
 
     # Palavras que sugerem número
-    numero_keywords = ['ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA', 'RELIDAS', 'QUANTIDADE', 'PEÇAS A SEREM RELIDAS']
+    numero_keywords = ['ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA', 'RELIDAS', 'QUANTIDADE']
 
     for col in df.columns:
         col_normalized = col.upper()
@@ -663,9 +813,21 @@ def configurar_colunas_com_filtros_dinamicos(gb, df):
             gb.configure_column(col, filter="agTextColumnFilter")
 
 
+def adicionar_status_visual(df):
+    if "DIVERGÊNCIA" in df.columns:
+        df["STATUS"] = df["DIVERGÊNCIA"].apply(lambda x:
+            "🟡 SOBRA" if x > 0 else "🔴 FALTA" if x < 0 else "✅ OK"
+        )
+    else:
+        df["STATUS"] = "N/A"
+    return df
+
 # Função para exibir tabela de dados
 def display_data_table(df):
+    df = adicionar_status_visual(df)
     gb = GridOptionsBuilder.from_dataframe(df)
+    # Estilo direto em JavaScript como string, válido para cellStyle
+    # Aplicar cellStyle diretamente como string JS (sem JsCode)
     gb.configure_pagination(enabled=False)  # Desativar paginação
     gb.configure_side_bar(True)
     gb.configure_selection('multiple')
@@ -674,8 +836,21 @@ def display_data_table(df):
     for col in df.columns:
         gb.configure_column(
             col,
-            cellStyle={"borderRight": "1px solid #4e4e4e", "padding": "6px"}
+            cellStyle={"borderRight": "1px solid #4e4e4e", "padding": "6px"},
         )
+        gb.configure_column(
+            col,
+            filter="agSetColumnFilter",
+            filter_params={"excelMode": "windows"}
+        )
+    gb.configure_column(
+        "STATUS",
+        header_name="STATUS",
+        cellStyle={
+            "fontWeight": "bold",
+            "textAlign": "center"
+        }
+    )
     gb.configure_default_column(
         floatingFilter=True,
         value=True,
@@ -684,7 +859,7 @@ def display_data_table(df):
         groupable=True,
         filter=True,
         sortable=True
-    )
+    )# Estilo condicional com JsCode — definido ANTES do build
     gb.configure_grid_options(
         domLayout='normal',
         rowHeight=30,
@@ -708,11 +883,12 @@ def display_data_table(df):
     # Define o estilo visual da grade
     grid_options["gridStyle"] = {
         "border": "1px solid #4e4e4e",         # contorno
-        "borderColor": "#4e4e4e",
+        "borderColor": "#f2ede3",
         "borderWidth": "1px",
         "borderStyle": "solid",
         "borderCollapse": "collapse"
     }
+    
     grid_options["rowStyle"] = {
         "borderBottom": "1px solid #4e4e4e"
     }
@@ -726,29 +902,19 @@ def display_data_table(df):
             "checkbox": True  # <-- Isso coloca o checkbox na coluna agrupada!
         }
     }
-    grid_options["getRowStyle"] = """
-    function(params) {
-        var divergencia = params.data['DIVERGÊNCIA'];
-        if (divergencia > 0) {
-            return { border: '2px solid orange' };
-        } else if (divergencia < 0) {
-            return { border: '2px solid red' };
-        } else {
-            return null;
-        }
-    }
-    """
+
     grid_response = AgGrid(
         df,
         gridOptions=grid_options,
-        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+        data_return_mode=DataReturnMode.AS_INPUT,
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
-        theme='streamlit',
+        theme="meterial",
         enable_enterprise_modules=True,
         height=750,
         width='100%',
         reload_data=True,
+        allow_unsafe_jscode=True
     )
 
     filtered_df = pd.DataFrame(grid_response['data'])
