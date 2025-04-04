@@ -652,10 +652,11 @@ def display_data_table(df):
     gb.configure_selection('multiple')
     # gb.configure_column("REFERENCIA", type=["numericColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
     # gb.configure_column("COR",type=["textColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
-    gb.configure_column(
-        col,
-        cellStyle={"borderRight": "1px solid #d0d0d0", "padding": "6px"}
-    )
+    for col in df.columns:
+        gb.configure_column(
+            col,
+            cellStyle={"borderRight": "1px solid #d0d0d0", "padding": "6px"}
+        )
     gb.configure_default_column(
         value=True,
         enableRowGroup=True,
