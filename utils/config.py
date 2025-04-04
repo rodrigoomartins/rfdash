@@ -726,6 +726,23 @@ def display_data_table(df):
             "checkbox": True  # <-- Isso coloca o checkbox na coluna agrupada!
         }
     }
+    grid_options["getRowStyle"] = """
+    function(params) {
+        let divergencia = params.data['DIVERGÊNCIA'];
+        if (divergencia > 0) {
+            return {
+                border: '2px solid orange'
+            };
+        } else if (divergencia < 0) {
+            return {
+                border: '2px solid red'
+            };
+        } else {
+            return {};  // Sem estilo extra
+        }
+    }
+    """
+
     grid_response = AgGrid(
         df,
         gridOptions=grid_options,
