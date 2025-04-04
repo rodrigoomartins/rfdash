@@ -644,6 +644,25 @@ def generate_pie_chart(accuracy_percentage):
     fig = px.pie(values=values, names=labels, title='Acurácia do Inventário')
     return fig
 
+def configurar_colunas_com_filtros_dinamicos(gb, df):
+    # Palavras que sugerem texto
+    texto_keywords = ['EAN', 'PRODUTO', 'MODELO', 'COR', 'TAM', 'DESCRIÇÃO', 'REFERÊNCIA', 'NOME']
+
+    # Palavras que sugerem número
+    numero_keywords = ['ESTOQUE', 'CONTAGEM', 'DIVERGÊNCIA', 'RELIDAS', 'QUANTIDADE', 'PEÇAS A SEREM RELIDAS']
+
+    for col in df.columns:
+        col_normalized = col.upper()
+
+        if any(keyword in col_normalized for keyword in texto_keywords):
+            gb.configure_column(col, filter="agTextColumnFilter")
+        elif any(keyword in col_normalized for keyword in numero_keywords):
+            gb.configure_column(col, filter="agNumberColumnFilter")
+        else:
+            # Filtro padrão de texto caso não detecte
+            gb.configure_column(col, filter="agTextColumnFilter")
+
+
 # Função para exibir tabela de dados
 def display_data_table(df):
     gb = GridOptionsBuilder.from_dataframe(df)
@@ -659,7 +678,6 @@ def display_data_table(df):
         )
     gb.configure_default_column(
         value=True,
-        floatingFilter=True,
         enableRowGroup=True,
         editable=False,
         groupable=True,
@@ -667,6 +685,7 @@ def display_data_table(df):
         sortable=True
     )
     gb.configure_grid_options(
+        floatingFilter=True,
         domLayout='normal',
         rowHeight=30,
         headerHeight=42,
