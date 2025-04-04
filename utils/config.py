@@ -688,7 +688,7 @@ def display_data_table(df):
         data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
-        # theme='alpine',
+        theme='balham',
         enable_enterprise_modules=True,
         height=750,
         width='100%',
