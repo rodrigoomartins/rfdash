@@ -728,21 +728,16 @@ def display_data_table(df):
     }
     grid_options["getRowStyle"] = """
     function(params) {
-        let divergencia = params.data['DIVERGÊNCIA'];
+        var divergencia = params.data['DIVERGÊNCIA'];
         if (divergencia > 0) {
-            return {
-                border: '2px solid orange'
-            };
+            return { border: '2px solid orange' };
         } else if (divergencia < 0) {
-            return {
-                border: '2px solid red'
-            };
+            return { border: '2px solid red' };
         } else {
-            return {};  // Sem estilo extra
+            return null;
         }
     }
     """
-
     grid_response = AgGrid(
         df,
         gridOptions=grid_options,
