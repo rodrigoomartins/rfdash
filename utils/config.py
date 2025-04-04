@@ -655,7 +655,7 @@ def display_data_table(df):
     for col in df.columns:
         gb.configure_column(
             col,
-            cellStyle={"borderRight": "1px solid #d0d0d0", "padding": "6px"}
+            cellStyle={"borderRight": "1px solid #4e4e4e", "padding": "6px"}
         )
     gb.configure_default_column(
         value=True,
