@@ -652,8 +652,24 @@ def display_data_table(df):
     gb.configure_selection('multiple')
     # gb.configure_column("REFERENCIA", type=["numericColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
     # gb.configure_column("COR",type=["textColumn"],editable=False,enableRowGroup=True,enablePivot=True,enableValue=True,rowGroup=True)
-    gb.configure_default_column(value=True, enableRowGroup=True, editable=False, groupable=True, filter=True, sortable=True)
-    gb.configure_grid_options(domLayout='normal', enableEnterpriseModules=True, enableRangeSelection=True, suppressExcelExport=False, suppressMultiSort=False)  # Configurar altura automática para rolagem infinita
+    gb.configure_default_column(
+        value=True,
+        enableRowGroup=True,
+        editable=False,
+        groupable=True,
+        filter=True,
+        sortable=True
+    )
+    gb.configure_grid_options(
+        domLayout='normal',
+        rowHeight=30,
+        headerHeight=42,
+        enableEnterpriseModules=True,
+        enableRangeSelection=True,
+        suppressExcelExport=False,
+        suppressMultiSort=False,
+        enableCharts=True
+    )  # Configurar altura automática para rolagem infinita
     grid_options = gb.build()
     grid_options["enableRangeSelection"] = True
     grid_options["enableCharts"] = True
