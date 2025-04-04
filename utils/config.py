@@ -677,6 +677,7 @@ def display_data_table(df):
             cellStyle={"borderRight": "1px solid #4e4e4e", "padding": "6px"}
         )
     gb.configure_default_column(
+        floatingFilter=True,
         value=True,
         enableRowGroup=True,
         editable=False,
@@ -685,7 +686,6 @@ def display_data_table(df):
         sortable=True
     )
     gb.configure_grid_options(
-        floatingFilter=True,
         domLayout='normal',
         rowHeight=30,
         headerHeight=42,
