@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory
 import streamlit.components.v1 as components
-from streamlit_option_menu import option_menu
 import base64
 
 # Configurações padrão do Streamlit
