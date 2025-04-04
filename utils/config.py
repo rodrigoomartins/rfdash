@@ -683,7 +683,8 @@ def display_data_table(df):
         "border": "1px solid #4e4e4e",         # contorno
         "borderColor": "#4e4e4e",
         "borderWidth": "1px",
-        "borderStyle": "solid"
+        "borderStyle": "solid",
+        "borderCollapse": "collapse"
     }
     grid_options["rowStyle"] = {
         "borderBottom": "1px solid #4e4e4e"
