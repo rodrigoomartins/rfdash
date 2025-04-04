@@ -659,6 +659,7 @@ def display_data_table(df):
         )
     gb.configure_default_column(
         value=True,
+        floatingFilter=True,
         enableRowGroup=True,
         editable=False,
         groupable=True,
