@@ -906,8 +906,8 @@ def display_data_table(df):
     grid_response = AgGrid(
         df,
         gridOptions=grid_options,
-        data_return_mode=DataReturnMode.AS_INPUT,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
+        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+        update_mode=GridUpdateMode.FILTERING_CHANGED,
         fit_columns_on_grid_load=True,
         theme="meterial",
         enable_enterprise_modules=True,

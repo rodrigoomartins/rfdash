@@ -123,8 +123,7 @@ if estoque_df is not None and contagem_df is not None:
     # else:
     #     df_filtrado = discrepancies
     # Exibir tabela de dados filtrados
-    col_filtro1, col_filtro2 = st.columns([1,5])
-    with col_filtro1:
+    
     #     filtro=option_menu(
     #         menu_title=None,
     #         options=[
@@ -168,6 +167,8 @@ if estoque_df is not None and contagem_df is not None:
     #         }
     #     )
         # Aplica estilo CSS personalizado
+    col_filtro1, col_filtro2 = st.columns([1,5])
+    with col_filtro1:
         st.markdown("""
             <style>
             div[data-baseweb="select"] {
@@ -194,9 +195,13 @@ if estoque_df is not None and contagem_df is not None:
         df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] < 0]
     else:
         df_filtrado = discrepancies
+    
     filtered_df = display_data_table(df_filtrado)
     # Mostrar resumo
     
+    # Atualize o session_state com o DataFrame filtrado
+    st.session_state.filtered_df = filtered_df
+
     # Exibir métricas do resumo dinâmico
     if not filtered_df.empty:
         total_estoque = int(filtered_df['ESTOQUE'].sum())
