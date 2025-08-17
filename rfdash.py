@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory
+from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory, pick_expected_columns_ui, standardize_expected_df, pick_pdf_columns_ui
 import streamlit.components.v1 as components
 import base64
 
@@ -45,7 +45,7 @@ with st.sidebar:
 
     O arquivo CSV da contagem com RFID é gerado pelo RFLOG e contém EAN e Quantidade dos produtos lidos.
 
-    Os arquivos CSV devem conter cabeçalhos, ter `,` (vírgula) como separador padrão e estarem na codificação `UTF-8` (padrão para Google Planilhas; disponível no menu `Tipo` na janela de salvamento do Excel; disponível no menu `Codificação` na janela de salvamento do Bloco de Notas.)
+    Os arquivos CSV podem ter vírgula ou ponto e vírgula como separador, com ou sem aspas, e codificações variadas (UTF-8, Latin-1/CP1252 etc.). A aplicação detecta isso automaticamente.
     """)
     st.write("É possível carregar mais de um arquivo CSV de inventário e escolher qual será comparado com o estoque esperado.\nA tabela de divergência permite vários tipos de filtragens, ordenações e outras configurações disponíveis.\nAo fim, é possível gerar um arquivo PDF da tabela de divergência.\n\nCaso não seja possível gerar o arquivo PDF, é possível exportar a tabela clicando com o botão direito dentro de qualquer célula e seguindo o menu `Export`.")
 
@@ -74,17 +74,27 @@ with st.expander("Upload de Arquivos",expanded=True, icon='📂'):
             key="contagem",
             help="Arquivo `.txt` extraído do RFLog"
         )
-    st.info("O arquivo de estoque esperado deve conter obrigatoriamente as colunas 'EAN' e 'ESTOQUE'. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
+    st.info("Após carregar o **estoque esperado**, selecione abaixo quais colunas correspondem a **EAN** e **ESTOQUE**. Suportamos CSV com separador vírgula `,` ou ponto e vírgula `;`, com ou sem aspas, e diferentes codificações (UTF-8, Latin-1/CP1252 etc.). As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
 # Processar os uploads
 estoque_df, estoque_tipo = process_upload(uploaded_estoque_esperado, "estoque_esperado")
 contagem_df, contagem_tipo = process_upload(uploaded_contagem, "contagem")
+# === Mapeamento de colunas do ESTOQUE ESPERADO ===
+if estoque_df is not None:
+    with st.expander("Mapeamento de Colunas do Estoque Esperado", expanded=True):
+        mapping = pick_expected_columns_ui(estoque_df)
+        try:
+            estoque_df = standardize_expected_df(estoque_df, mapping)
+            st.success("Mapeamento aplicado. Colunas padronizadas para 'EAN' e 'ESTOQUE'.")
+        except Exception as e:
+            st.error(f"Não foi possível aplicar o mapeamento: {e}")
+            estoque_df = None
 
 # Exibir mensagens de sucesso ou erro
 if uploaded_estoque_esperado:
     if estoque_df is not None:
         show_temporary_success("estoque_df","Arquivo de estoque esperado carregado com sucesso!",duration=2)
     else:
-        st.error("Falha ao carregar o arquivo de estoque esperado.")
+        st.error("Falha ao carregar/normalizar o arquivo de estoque esperado. Verifique o mapeamento de colunas.")
 
 if uploaded_contagem:
     if contagem_df is not None:
@@ -225,20 +235,6 @@ if estoque_df is not None and contagem_df is not None:
             st.metric("Estoque Esperado", total_estoque,border=True)
         with col6:
             st.metric('Total da Contagem com RFID', total_contagem,border=True)
-        # accuracy_percentage = ((total_estoque - total_divergencia_absoluta) / total_estoque * 100) if total_estoque != 0 else 0
-        # contagem_correta = total_estoque-total_divergencia_absoluta
-        # print("contagem_correta: ",contagem_correta)
-        # if total_estoque > 0:
-        #     accuracy_percentage = max(0, (1 - (total_divergencia_absoluta / total_estoque)) * 100)
-        # else:
-        #     accuracy_percentage = 0  # ou 'N/A' 
-        # accuracy_percentage = max(0, (contagem_correta / total_estoque) * 100)
-        # if total_contagem == total_estoque:
-        #     accuracy_percentage = 100
-        # if total_contagem < total_estoque:
-        #     accuracy_percentage = (total_contagem / total_estoque) * 100
-        # if total_contagem > total_estoque:
-        #     accuracy_percentage = (total_estoque / total_contagem) * 100
         accuracy_percentage = (1 - (total_divergencia_absoluta / total_estoque))*100
         print("accurracy_percentage: ",accuracy_percentage)
         with col7:
@@ -273,15 +269,6 @@ if estoque_df is not None and contagem_df is not None:
 
     # Gerar gráfico de pizza para acurácia
     st.divider()
-    # col_graph1,col_graph2 = st.columns(2)
-    # with col_graph1:
-    #     fig_pie_chart = generate_pie_chart(accuracy_percentage)
-    #     st.plotly_chart(fig_pie_chart)
-    # with col_graph2:
-    # liquid_html = generate_liquid_chart(accuracy_percentage)
-    # nested_html= grafico_resumo_inventario()
-    # components.html(liquid_html, height=400)
-    # components.html(nested_html,height=1000)
     dashboard_html = dynamic_dashboard(
         total_estoque,
         total_contagem,
@@ -292,52 +279,34 @@ if estoque_df is not None and contagem_df is not None:
         total_divergencia_negativa
     )
     
-    # # Botão para gerar PDF
-    # if st.button("Gerar PDF"):
-    #     with st.spinner('Gerando o PDF, por favor aguarde...'):
-    #         pdf_path = generate_pdf(filtered_df, font_size=8, orientation="L")
-    #         if pdf_path:
-    #             with open(pdf_path, "rb") as pdf_file:
-    #                 st.download_button(
-    #                     label="Baixar PDF",
-    #                     data=pdf_file,
-    #                     file_name="relatorio_divergencia_inventario.pdf",
-    #                     mime="application/pdf"
-    #                 )
+    from utils.config import pick_pdf_columns_ui, generate_pdf_in_memory, generate_timestamp
 
-    # Na sua página Streamlit:
-    if st.button("Gerar e Baixar PDF"):
-        with st.spinner('Gerando o PDF, por favor aguarde...'):
-            try:
-                # Supondo que filtered_df já está definido
-                pdf_bytes = generate_pdf_in_memory(filtered_df, font_size=8, orientation="L")
-                
-                # Codificar em base64 para o download automático
-                b64 = base64.b64encode(pdf_bytes).decode()
-                
-                # HTML/JavaScript para forçar o download automaticamente
-                download_js = f"""
-                <script>
-                function downloadFile() {{
-                    const link = document.createElement('a');
-                    link.href = 'data:application/pdf;base64,{b64}';
-                    link.download = 'relatorio_divergencia_inventario.pdf';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }}
-                window.onload = downloadFile;
-                </script>
-                """
-                
-                # Exibir o componente que vai disparar o JavaScript
-                st.components.v1.html(download_js, height=0)
-                
-                # Feedback adicional
-                st.success("PDF gerado com sucesso! O download deve iniciar automaticamente.")
-                
-            except Exception as e:
-                st.error(f"Erro ao gerar o PDF: {str(e)}")
+    with st.expander("Exportar PDF", expanded=False, icon="🖨️"):
+        # É ESSENCIAL usar o mesmo DF que está na tabela:
+        df_export = st.session_state.get("filtered_df", filtered_df)
 
-    with st.expander("Gráficos de Resumo", expanded=False,icon='📊'):
-        components.html(dashboard_html,height=1600)
+        # Agora o multiselect já vem com todas as colunas do df_export, na ordem certa
+        cols_pdf = pick_pdf_columns_ui(df_export, key="pdf_cols_export")
+
+        with st.form("pdf_form", clear_on_submit=False):
+            font_size = st.number_input("Tamanho da fonte", 6, 12, 8, 1)
+            orient = st.selectbox("Orientação", ["L", "P"], index=0,help="L = paisagem, P = retrato")
+            submit = st.form_submit_button("Gerar e Baixar PDF", use_container_width=True)
+
+        if submit:
+            with st.spinner("Gerando o PDF..."):
+                pdf_bytes = generate_pdf_in_memory(
+                    df_export,
+                    font_size=font_size,
+                    orientation=orient,
+                    include_columns=cols_pdf,   # <- exatamente as colunas da tabela, mesma ordem
+                )
+
+            st.download_button(
+                "Baixar PDF",
+                data=pdf_bytes,
+                file_name=f"relatorio_divergencia_{generate_timestamp()}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="dl_pdf_export",
+            )
