@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory, pick_expected_columns_ui, standardize_expected_df, pick_pdf_columns_ui
+from utils.config import process_upload, show_temporary_success, show_summary, calculate_discrepancies, display_data_table, generate_timestamp, dynamic_dashboard, generate_pdf_in_memory, pick_expected_columns_ui, standardize_expected_df, pick_pdf_columns_ui, apply_quick_filter
 import streamlit.components.v1 as components
 import base64
 
@@ -115,118 +115,77 @@ if estoque_df is not None and contagem_df is not None:
     all_discrepancies[file_name] = discrepancies
     show_summary(discrepancies)
     st.divider()
-    # opcao = st.radio("Filtro rápido",[
-    #     "Tudo",
-    #     "Divergências",
-    #     "Sobra",
-    #     "Falta"
-    # ],
-    # horizontal=True
-    # )
-    # # Aplicar filtro de acordo com a seleção
-    # if opcao == "Divergências":
-    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] != 0]
-    # elif opcao == "Sobra":
-    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] > 0]
-    # elif opcao == "Falta":
-    #     df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] < 0]
-    # else:
-    #     df_filtrado = discrepancies
-    # Exibir tabela de dados filtrados
-    
-    #     filtro=option_menu(
-    #         menu_title=None,
-    #         options=[
-    #             "Tudo",
-    #             "Divergências",
-    #             "Sobra",
-    #             "Falta"
-    #         ],
-    #         icons=[
-    #             "list",
-    #             "exclamation-triangle",
-    #             "arrow-up",
-    #             "arrow-down"
-    #         ],
-    #         orientation="horizontal",
-    #         default_index=0,
-    #         styles={
-    #             "container": {
-    #                 "display": "flex",
-    #                 "justify-content": "flex-start",  # Alinhamento à esquerda
-    #                 "padding": "0px",
-    #                 "margin-bottom": "12px",
-    #                 "background-color": "#111",  # Mais discreto
-    #                 "border-radius": "6px",
-    #                 "flex-wrap": "wrap",  # Garante que quebra em telas menores
-    #             },
-    #             "icon": {"color": "white", "font-size": "12px"},
-    #             "nav-link": {
-    #                 "font-size": "12px",
-    #                 "padding": "2px 10px",  # Reduz a altura/largura
-    #                 "margin": "0 2px",
-    #                 "color": "#ccc",
-    #                 "--hover-color": "#222",
-    #                 "border-radius": "4px"
-    #             },
-    #             "nav-link-selected": {
-    #                 "background-color": "#2d4030",
-    #                 "color": "#fff",
-    #                 "font-weight": "600"
-    #             },
-    #         }
-    #     )
-        # Aplica estilo CSS personalizado
+
+    # =========================
+    # Filtro rápido mais estável
+    # =========================
+    # Estado para resetar a grade quando modo mudar/limpar
+    if "grid_reset_version" not in st.session_state:
+        st.session_state.grid_reset_version = 0
+    if "quick_mode" not in st.session_state:
+        st.session_state.quick_mode = "Tudo"
+
+    # Contadores (ajuda na escolha)
+    tot_all   = len(discrepancies)
+    tot_div   = int((discrepancies["DIVERGÊNCIA"] != 0).sum())
+    tot_sobra = int((discrepancies["DIVERGÊNCIA"] > 0).sum())
+    tot_falta = int((discrepancies["DIVERGÊNCIA"] < 0).sum())
+
+    labels = {
+        "Tudo":         f"Tudo",
+        "Divergências": f"Divergências",
+        "Sobra":        f"Sobra",
+        "Falta":        f"Falta",
+    }
+
     col_filtro1, col_filtro2 = st.columns([1,5])
     with col_filtro1:
         st.markdown("""
             <style>
-            div[data-baseweb="select"] {
-                font-size: 14px !important;
-                width: 250px !important;
-            }
-            label {
-                font-size: 12px !important;
-                color: #fff;
-            }
+            div[data-baseweb="select"] { font-size: 14px !important; width: 250px !important; }
+            label { font-size: 12px !important; color: #fff; }
             </style>
         """, unsafe_allow_html=True)
 
-        # Selectbox normal
-        filtro = st.selectbox(
+        choice = st.radio(
             "Filtro rápido:",
-            ["Tudo", "Divergências", "Sobra", "Falta"],
+            options=list(labels.keys()),
+            format_func=lambda k: labels[k],
+            horizontal=True,
+            key="quick_filter_radio",
         )
-    if filtro == "Divergências":
-        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] != 0]
-    elif filtro == "Sobra":
-        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] > 0]
-    elif filtro == "Falta":
-        df_filtrado = discrepancies[discrepancies["DIVERGÊNCIA"] < 0]
-    else:
-        df_filtrado = discrepancies
-    
-    filtered_df = display_data_table(df_filtrado)
-    # Mostrar resumo
-    
-    # Atualize o session_state com o DataFrame filtrado
+
+    # Se mudou o modo, incrementa a versão para recriar a grade
+    if choice != st.session_state.quick_mode:
+        st.session_state.quick_mode = choice
+        st.session_state.grid_reset_version += 1
+
+    # Aplica filtro rápido ao DF base e monta a grade com key única
+    df_quick = apply_quick_filter(discrepancies, st.session_state.quick_mode)
+    grid_key = f"grid_{st.session_state.quick_mode}_{st.session_state.grid_reset_version}"
+
+    filtered_df = display_data_table(df_quick, key=grid_key)
+
+    # ---- Botão ABAIXO da tabela para limpar filtros internos da AgGrid ----
+    if st.button("Limpar filtros da tabela", key=f"clear_grid_filters_{st.session_state.grid_reset_version}"):
+        st.session_state.grid_reset_version += 1
+        try:
+            st.rerun()
+        except Exception:
+            st.experimental_rerun()
+    # ----------------------------------------------------------------------
+
+    # Atualize o session_state com o DataFrame filtrado (o que está visível)
     st.session_state.filtered_df = filtered_df
 
-    # Exibir métricas do resumo dinâmico
+    # Exibir métricas do resumo dinâmico (com base no que está na grade)
     if not filtered_df.empty:
         total_estoque = int(filtered_df['ESTOQUE'].sum())
-        print("---")
-        print("total_estoque: ",total_estoque)
         total_contagem = int(filtered_df['CONTAGEM'].sum())
-        print("total_contagem: ",total_contagem)
         total_divergencia_positiva = int(filtered_df[filtered_df['DIVERGÊNCIA'] > 0]['DIVERGÊNCIA'].sum())
-        print("total_divergencia_positiva: ",total_divergencia_positiva)
         total_divergencia_negativa = int(filtered_df[filtered_df['DIVERGÊNCIA'] < 0]['DIVERGÊNCIA'].sum())
-        print("total_divergencia_negativa: ",total_divergencia_negativa)
         total_divergencia_absoluta = int(filtered_df['DIVERGÊNCIA'].abs().sum())
-        print("total_divergencia_absoluta: ",total_divergencia_absoluta)
         total_pecas_a_serem_relidas = filtered_df[filtered_df['DIVERGÊNCIA'] != 0]['PEÇAS A SEREM RELIDAS'].sum()
-        print("total_pecas_a_serem_relidas: ",total_pecas_a_serem_relidas)
 
         st.subheader("Resumo Dinâmico")
         st.caption("(valores filtrados na tabela)")
@@ -235,8 +194,7 @@ if estoque_df is not None and contagem_df is not None:
             st.metric("Estoque Esperado", total_estoque,border=True)
         with col6:
             st.metric('Total da Contagem com RFID', total_contagem,border=True)
-        accuracy_percentage = (1 - (total_divergencia_absoluta / total_estoque))*100
-        print("accurracy_percentage: ",accuracy_percentage)
+        accuracy_percentage = (1 - (total_divergencia_absoluta / total_estoque))*100 if total_estoque else 0.0
         with col7:
             st.metric("Acurácia do Inventário", f"{accuracy_percentage:.2f}%",border=True)
 
@@ -254,8 +212,8 @@ if estoque_df is not None and contagem_df is not None:
         with col4:
             pecas_relidas_percentage = (total_pecas_a_serem_relidas / total_estoque) * 100 if total_estoque != 0 else 0
             st.metric("Peças a Serem Relidas", f"{int(total_pecas_a_serem_relidas)}", delta=f"{pecas_relidas_percentage:.2f}%", delta_color='inverse',border=True)
-        
-        # Salvar métricas no arquivo JSON
+
+        # Salvar métricas no arquivo JSON (se quiser reativar)
         metrics = {
             'total_estoque': total_estoque,
             'total_contagem': total_contagem,
@@ -266,6 +224,15 @@ if estoque_df is not None and contagem_df is not None:
             'nome_arquivo_contagem': file_name
         }
         #save_metrics(metrics)
+    else:
+        # Proteção para quando a grade estiver vazia (evita variáveis indefinidas)
+        total_estoque = 0
+        total_contagem = 0
+        total_divergencia_positiva = 0
+        total_divergencia_negativa = 0
+        total_divergencia_absoluta = 0
+        total_pecas_a_serem_relidas = 0
+        accuracy_percentage = 0.0
 
     # Gerar gráfico de pizza para acurácia
     st.divider()

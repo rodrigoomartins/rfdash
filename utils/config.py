@@ -266,9 +266,26 @@ def adicionar_status_visual(df: pd.DataFrame) -> pd.DataFrame:
         df["STATUS"] = "N/A"
     return df
 
-def display_data_table(df: pd.DataFrame):
+def apply_quick_filter(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     """
-    Mostra a tabela com AgGrid e retorna o DataFrame filtrado/ordenado.
+    Aplica o filtro rápido sobre o DF de divergências.
+    Opções: 'Tudo' | 'Divergências' | 'Sobra' | 'Falta'
+    """
+    if df is None or df.empty or "DIVERGÊNCIA" not in df.columns:
+        return df
+    if mode == "Divergências":
+        return df[df["DIVERGÊNCIA"] != 0]
+    if mode == "Sobra":
+        return df[df["DIVERGÊNCIA"] > 0]
+    if mode == "Falta":
+        return df[df["DIVERGÊNCIA"] < 0]
+    return df  # Tudo
+
+
+def display_data_table(df: pd.DataFrame, key: str | None = None) -> pd.DataFrame:
+    """
+    Mostra a tabela com AgGrid e retorna o DataFrame filtrado/ordenado pelo usuário.
+    Aceita 'key' para forçar remontagem da grade (reset de filtros/sort internos).
     """
     df = adicionar_status_visual(df.copy())
     gb = GridOptionsBuilder.from_dataframe(df)
@@ -282,28 +299,15 @@ def display_data_table(df: pd.DataFrame):
         gb.configure_column(col, filter="agSetColumnFilter", filter_params={"excelMode": "windows"})
 
     gb.configure_column("STATUS", header_name="STATUS", cellStyle={"fontWeight": "bold", "textAlign": "center"})
-
     gb.configure_default_column(
-        floatingFilter=True,
-        value=True,
-        enableRowGroup=True,
-        editable=False,
-        groupable=True,
-        filter=True,
-        sortable=True,
+        floatingFilter=True, value=True, enableRowGroup=True, editable=False,
+        groupable=True, filter=True, sortable=True
     )
-
     configurar_colunas_com_filtros_dinamicos(gb, df)
-
     gb.configure_grid_options(
-        domLayout="normal",
-        rowHeight=30,
-        headerHeight=42,
-        enableEnterpriseModules=True,
-        enableRangeSelection=True,
-        suppressExcelExport=False,
-        suppressMultiSort=False,
-        enableCharts=True,
+        domLayout="normal", rowHeight=30, headerHeight=42,
+        enableEnterpriseModules=True, enableRangeSelection=True,
+        suppressExcelExport=False, suppressMultiSort=False, enableCharts=True
     )
 
     grid_options = gb.build()
@@ -313,11 +317,8 @@ def display_data_table(df: pd.DataFrame):
     grid_options["groupDefaultExpanded"] = -1
     grid_options["groupMultiAutoColumn"] = True
     grid_options["gridStyle"] = {
-        "border": "1px solid #4e4e4e",
-        "borderColor": "#f2ede3",
-        "borderWidth": "1px",
-        "borderStyle": "solid",
-        "borderCollapse": "collapse",
+        "border": "1px solid #4e4e4e", "borderColor": "#f2ede3",
+        "borderWidth": "1px", "borderStyle": "solid", "borderCollapse": "collapse",
     }
     grid_options["rowStyle"] = {"borderBottom": "1px solid #4e4e4e"}
     grid_options["rowHeight"] = 30
@@ -340,6 +341,7 @@ def display_data_table(df: pd.DataFrame):
         width="100%",
         reload_data=True,
         allow_unsafe_jscode=True,
+        key=key,  # <-- importante para “resetar” a grade quando o filtro rápido mudar
     )
 
     return pd.DataFrame(grid_response["data"])
