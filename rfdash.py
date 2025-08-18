@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# --- Import protegido para funcionar mesmo se apply_quick_filter ainda não estiver no config.py do deploy ---
+# ==== Import robusto: tenta utils.config, depois config (raiz), com fallback para apply_quick_filter ====
 try:
     from utils.config import (
         process_upload,
@@ -15,10 +15,10 @@ try:
         pick_expected_columns_ui,
         standardize_expected_df,
         pick_pdf_columns_ui,
-        apply_quick_filter,   # pode não existir na nuvem se o config.py não foi atualizado
+        apply_quick_filter,  # pode não existir em deploy antigo
     )
 except ImportError:
-    # importa o restante normalmente
+    # tenta importar de config.py na raiz
     from utils.config import (
         process_upload,
         show_temporary_success,
@@ -32,7 +32,7 @@ except ImportError:
         standardize_expected_df,
         pick_pdf_columns_ui,
     )
-    # fallback compatível
+    # fallback local caso apply_quick_filter não exista ainda
     def apply_quick_filter(df: pd.DataFrame, mode: str) -> pd.DataFrame:
         if df is None or df.empty or "DIVERGÊNCIA" not in df.columns:
             return df
@@ -43,7 +43,7 @@ except ImportError:
         if mode == "Falta":
             return df[df["DIVERGÊNCIA"] < 0]
         return df
-# ------------------------------------------------------------------------------------------------------------
+# =========================================================================================================
 
 import streamlit.components.v1 as components
 import base64
