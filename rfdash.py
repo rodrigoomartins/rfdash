@@ -60,7 +60,7 @@ with st.expander("Upload de Arquivos",expanded=True, icon='📂'):
     with col8:
         st.subheader("Arquivo de Estoque Esperado")
         uploaded_estoque_esperado = st.file_uploader(
-            "Upload do arquivo de estoque esperado (.csv, .xls, .xlsx)",
+            "Upload do arquivo de estoque esperado (.csv, .xls, .xlsx). O arquivo **deve** conter cabeçalho descrevendo as colunas.",
             type=['csv', 'xls', 'xlsx'],
             key="estoque_esperado",
             help="Arquivo `.csv`, `.txt`, `.xls` ou `xlsx` com dados de estoque (recomendado utilizar `.csv` separado por `,`)"
@@ -74,7 +74,7 @@ with st.expander("Upload de Arquivos",expanded=True, icon='📂'):
             key="contagem",
             help="Arquivo `.txt` extraído do RFLog"
         )
-    st.info("Após carregar o **estoque esperado**, selecione abaixo quais colunas correspondem a **EAN** e **ESTOQUE**. Suportamos CSV com separador vírgula `,` ou ponto e vírgula `;`, com ou sem aspas, e diferentes codificações (UTF-8, Latin-1/CP1252 etc.). As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
+    st.info("Após carregar o **estoque esperado**, selecione abaixo quais colunas correspondem a **EAN** e **ESTOQUE**. As demais colunas são opcionais e, se presentes, serão exibidas na tabela.")
 # Processar os uploads
 estoque_df, estoque_tipo = process_upload(uploaded_estoque_esperado, "estoque_esperado")
 contagem_df, contagem_tipo = process_upload(uploaded_contagem, "contagem")
