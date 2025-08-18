@@ -138,22 +138,20 @@ if estoque_df is not None and contagem_df is not None:
         "Falta":        f"Falta",
     }
 
-    col_filtro1, col_filtro2 = st.columns([1,5])
-    with col_filtro1:
-        st.markdown("""
-            <style>
-            div[data-baseweb="select"] { font-size: 14px !important; width: 250px !important; }
-            label { font-size: 12px !important; color: #fff; }
-            </style>
-        """, unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+        div[data-baseweb="select"] { font-size: 14px !important; width: 250px !important; }
+        label { font-size: 12px !important; color: #fff; }
+        </style>
+    """, unsafe_allow_html=True)
 
-        choice = st.radio(
-            "Filtro rápido:",
-            options=list(labels.keys()),
-            format_func=lambda k: labels[k],
-            horizontal=True,
-            key="quick_filter_radio",
-        )
+    choice = st.radio(
+        "Filtro rápido:",
+        options=list(labels.keys()),
+        format_func=lambda k: labels[k],
+        horizontal=True,
+        key="quick_filter_radio",
+    )
 
     # Se mudou o modo, incrementa a versão para recriar a grade
     if choice != st.session_state.quick_mode:
