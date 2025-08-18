@@ -1,62 +1,11 @@
 import streamlit as st
 import pandas as pd
-
-# ==== Import robusto: tenta utils.config, depois config (raiz), com fallback para apply_quick_filter ====
-try:
-    from utils.config import (
-        process_upload,
-        show_temporary_success,
-        show_summary,
-        calculate_discrepancies,
-        display_data_table,
-        generate_timestamp,
-        dynamic_dashboard,
-        generate_pdf_in_memory,
-        pick_expected_columns_ui,
-        standardize_expected_df,
-        pick_pdf_columns_ui,
-        apply_quick_filter,  # pode não existir em deploy antigo
-    )
-except ImportError:
-    # tenta importar de config.py na raiz
-    from utils.config import (
-        process_upload,
-        show_temporary_success,
-        show_summary,
-        calculate_discrepancies,
-        display_data_table,
-        generate_timestamp,
-        dynamic_dashboard,
-        generate_pdf_in_memory,
-        pick_expected_columns_ui,
-        standardize_expected_df,
-        pick_pdf_columns_ui,
-    )
-    # fallback local caso apply_quick_filter não exista ainda
-    def apply_quick_filter(df: pd.DataFrame, mode: str) -> pd.DataFrame:
-        if df is None or df.empty or "DIVERGÊNCIA" not in df.columns:
-            return df
-        if mode == "Divergências":
-            return df[df["DIVERGÊNCIA"] != 0]
-        if mode == "Sobra":
-            return df[df["DIVERGÊNCIA"] > 0]
-        if mode == "Falta":
-            return df[df["DIVERGÊNCIA"] < 0]
-        return df
-# =========================================================================================================
-
+from utils.config import *
 import streamlit.components.v1 as components
 import base64
 
 # Configurações padrão do Streamlit
-st.set_page_config(
-    layout="wide",
-    page_title="Análise de Divergência",
-    page_icon="📊",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'Report a bug': 'https://wa.me/5588993201518',
-        'About':'''
+st.set_page_config(layout="wide", page_title="Análise de Divergência", page_icon="📊", initial_sidebar_state="collapsed",menu_items={'Report a bug': 'https://wa.me/5588993201518','About':'''
 # Sobre a aplicação
 Aplicação para análise de divergência de inventários.
 \nFeita por [Votu RFID](https://www.voturfid.com.br)
@@ -66,9 +15,7 @@ Aplicação para análise de divergência de inventários.
                                                                                                                                 
 [Instagram](https://www.instagram.com/voturfid)
 
-[Facebook](https://www.facebook.com/voturfid)'''
-    }
-)
+[Facebook](https://www.facebook.com/voturfid)'''})
 
 logo_claro_path = "logo_claro_votu.png"
 logo_icon_claro_path = "logo_icon_claro.png"
