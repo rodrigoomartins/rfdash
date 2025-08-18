@@ -69,7 +69,7 @@ with st.expander("Upload de Arquivos",expanded=True, icon='📂'):
     with col9:
         st.subheader("Arquivo de Contagem")
         uploaded_contagem = st.file_uploader(
-            "Upload do arquivo de contagem (.csv ou .txt)",
+            "Upload do arquivo de contagem (.csv ou .txt) extraído do **RFLog**.",
             type=['csv', 'txt'],
             key="contagem",
             help="Arquivo `.txt` extraído do RFLog"
